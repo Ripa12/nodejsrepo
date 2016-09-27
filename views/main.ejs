@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	<% include partials/head.ejs %>
+
+</head>
+<body>
+    
+	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+		
+		<div class="navbar-header navbar-brand">
+			Towers 
+		</div>
+		
+		<ul class="nav navbar-nav">
+			<li class="active"><a href="Graph.html">Graphs</a></li>
+			<li><a href="Table.html">Tables</a></li>
+		</ul>
+		
+		<div class="col-sm-3 col-md-3">
+			<h3 style="color : blue;"> <%= keyValue %> </h3>
+		</div>
+
+		<div class="col-sm-3 col-md-3 pull-right">
+        <form class="navbar-form" role="search" action="/key" method="post">
+		<label for="usr">
+				<span style="color: white;">
+					<h4> Key:  </h4>
+				</span>
+			</label>
+        <div class="input-group">
+            <!--<form action="/add" method="post"> !-->
+			<input type="text" name="newItem" placeholder="Enter key">
+			<input type="submit">
+		<!--</form>!-->
+        </div>
+        </form>
+        </div>
+		
+	</nav>
+
+	
+    <% include partials/scripts.ejs %>
+</body>
+</html>
