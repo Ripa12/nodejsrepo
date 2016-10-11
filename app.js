@@ -1,4 +1,6 @@
 var express = require('express');
+var cookieParser = require('cookie-parser');
+var session = require('express-session')
 
 var app = express();
 
@@ -11,6 +13,9 @@ var routes = require('./routes')
 var path = require('path');
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(cookieParser())
+app.use(session({secret: 'keyboard cat'}))
+
 var bodyParser = require('body-parser');
 
 // Middlewares
@@ -21,6 +26,15 @@ app.use(bodyParser());
 
 // home
 app.get('/', routes.main);
+
+// Table page
+app.get('/Table.html', routes.tablePage);
+
+// Graph page
+app.get('/Graph.html', routes.graphPage);
+
+// get key
+app.post('/lastKey', routes.getLastKey);
 
 // search-bar
 app.post('/key', routes.searchItem);

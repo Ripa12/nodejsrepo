@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  
+	<% include partials/head.ejs %>
+
+	<style>
+		.vertical-center {
+		text-align: center;
+		}
+		.btn-xl {
+			padding: 18px 28px;
+			font-size: 22px;
+			border-radius: 8px;
+		}
+		.listNoBullet {
+			list-style-type: none;
+		}
+
+		.backContainer{
+		
+			background: #ffffff url('../images/BackgroundBanners.png') no-repeat center center fixed;
+			-webkit-background-size: cover;
+			-moz-background-size: cover;
+			-o-background-size: cover;
+			background-size: cover;
+			
+		}
+	</style>
+
+  </head>
+  <body style="padding-top: 70px;"  class="backContainer"> <!-- Put in CSS !-->
+  
+	<div class="container float-top">
+	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+		
+		<div class="navbar-header navbar-brand">
+			Towers 
+		</div>
+		
+		<ul class="nav navbar-nav">
+			<li><a href="Graph.html">Graphs</a></li>
+			<li class="active"><a href="Table.html">Tables</a></li>
+		</ul>
+		
+		<p class="navbar-text">Current Key: <%= currentKey %> </p> 
+		<p class="navbar-text" id="currKey"> </p> 
+
+		<div class="col-sm-3 col-md-3 pull-right">
+        <form class="navbar-form" id="myKey" role="search" action="/key" method="post">
+        <!--<form class="navbar-form" id="myKey" action="/key">!-->
+		<label for="usr">
+				<span style="color: white;">
+					<h4> Key:  </h4>
+				</span>
+			</label>
+        <div class="input-group">
+            <!--<form action="/add" method="post"> !-->
+			<input type="text" name="newItem" id="keyTextField" placeholder="Enter key">
+			<input type="submit">
+			
+        </div>
+        </form>
+        </div>
+		
+	</nav>
+	</div>
+
+	
+	<div class="container">
+		<div class="jumbotron vertical-center">
+			<!-- Insert drop down list !-->
+			<h1>Table</h1> 
+			<div class="row">
+				<div class="col-xs-6 col-xs-offset-3">
+					<div class="form-group">
+					<select class="selectpicker form-control" id="myKeySelector">
+						<optgroup label="Personal history">
+						<option>Claims</option> <!-- 0 !-->
+						<option>Me</option> <!-- 1 !-->
+						</optgroup>
+						<optgroup label="Leaderboard">
+						<option>Claims</option> <!-- 2 !-->
+						<option>Tower builds</option> <!-- 3 !-->
+						<option>Previous moons</option> <!-- 4 !-->
+						</optgroup>
+						<optgroup label="Hall of fame">
+						<option>First tower in country</option> <!-- 5 !-->
+						</optgroup>
+						<optgroup label="Towers">
+						<option>Metadata</option> <!-- 6 !-->
+						<option>Statistics</option> <!-- 7 !-->
+						</optgroup>
+						<optgroup label="Other">
+						<option>Date and time for new moons</option> <!-- 8 !-->
+						</optgroup>
+					</select>
+					</div>
+				</div>
+			</div>
+		<!--</form>!-->
+        </div>
+		</div>
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-2">
+				
+					<div class="jumbotron">
+						<!--<button class="btn btn-link btn-block" type="button">!-->
+						<!--</button>!-->
+					</div>
+					
+				</div>
+				<div class="col-sm-8">
+					<div class="jumbotron">
+						<div class="table-responsive table-bordered table-hover 
+						table-condensed">
+							<table class="table" id="keyTable">
+								<thead>
+								<tr>
+									<th>Example</th>
+									<th>Example</th>
+									<th>Example</th>
+								</tr>
+								</thead>
+								<tbody>
+								<tr>
+									<td>Example</td>
+									<td>Example</td> 
+									<td>Example</td>
+								</tr>
+								<tr>
+									<td>Example</td>
+									<td>Example</td> 
+									<td>Example</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-2">
+
+					<div class="jumbotron">
+					<!--<button class="btn btn-link btn-block" type="button">!-->
+					<!--</button>!-->
+					</div>
+				
+				</div>
+			</div>
+		</div>
+	</div>
+	
+    <% include partials/scripts.ejs %>
+  
+  	<script type="text/javascript">
+    jQuery(window).load(function () {
+    
+	//ev.preventDefault();
+	/*
+    $.ajax({
+            type: 'post',
+            url: '/lastKey',
+            data: {},
+            success: function (data) {
+          
+            	$("#currKey").empty();
+    			$("#currKey").append(data);
+            }
+        });
+	});
+	ev.preventDefault();
+	*/
+    </script>
+
+    <script type="text/javascript">
+    var form = $('#myKey');
+    form.submit(function (ev) {
+    	ev.preventDefault();
+        $.ajax({
+            type: form.attr('method'),
+            url: form.attr('action'),
+            data: {myApiKey: $('#keyTextField').val(), myKeySelector: $('#myKeySelector option:selected').index('option')},
+            success: function (data) {
+          
+            	var parsedData = JSON.parse(data);
+            	if(data.length > 0){
+          			//stat = obj;
+          			$("#keyTable").empty();
+
+          			var headers = Object.keys(parsedData[0]);
+          			
+          			$("#keyTable").append("<tr><th>"+headers.join("</th><th>")+"</th></tr>");
+          			
+					for (var outerKey in parsedData){
+              
+              			var innerObject = parsedData[outerKey];
+
+              			var valueArray = Object.keys(innerObject).map(function(key) {
+    						return innerObject[key];
+    					});
+    					//alert(JSON.stringify(valueArray));
+    					$("#keyTable").append("<tr><td>"+valueArray.join("</td><td>")+"</td></tr>");
+              			
+         			}
+        		}
+            }
+        });
+
+        ev.preventDefault();
+    });
+	</script>
+  </body>
+</html>

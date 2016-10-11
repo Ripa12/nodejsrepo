@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  
+   <% include partials/head.ejs %>
+
+	<style>
+		.vertical-center {
+		text-align: center;
+		}
+		.btn-xl {
+			padding: 18px 28px;
+			font-size: 22px;
+			border-radius: 8px;
+		}
+		.listNoBullet {
+			list-style-type: none;
+		}
+
+		.backContainer{
+		
+			background: #ffffff url('../images/BackgroundBanners.png') no-repeat center center fixed;
+			-webkit-background-size: cover;
+			-moz-background-size: cover;
+			-o-background-size: cover;
+			background-size: cover;
+			
+		}
+	</style>
+
+  </head>
+  <body style="padding-top: 70px;" class="backContainer"> <!-- Put in CSS !-->
+  
+	<div class="container float-top">
+	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+		
+		<div class="navbar-header navbar-brand">
+			Towers 
+		</div>
+		
+		<ul class="nav navbar-nav">
+			<li class="active"><a href="Graph.html">Graphs</a></li>
+			<li><a href="Table.html">Tables</a></li>
+		</ul>
+		
+		<p class="navbar-text">Current Key: <%= currentKey %> </p> 
+		<p class="navbar-text" id="currKey"> </p> 
+
+		<div class="col-sm-3 col-md-3 pull-right">
+        <form class="navbar-form" id="myKey" role="search" action="/key" method="post">
+        <!--<form class="navbar-form" id="myKey" action="/key">!-->
+		<label for="usr">
+				<span style="color: white;">
+					<h4> Key:  </h4>
+				</span>
+			</label>
+        <div class="input-group">
+            <!--<form action="/add" method="post"> !-->
+			<input type="text" name="newItem" id="keyTextField" placeholder="Enter key">
+			<input type="submit">
+        </div>
+        </form>
+        </div>
+		
+	</nav>
+	</div>
+
+	
+	<div class="container">
+		<div class="jumbotron vertical-center">
+			<!-- Insert drop down list !-->
+			<h1>Graph</h1> 
+			<div class="row">
+				<div class="col-xs-6 col-xs-offset-3">
+					<div class="form-group">
+					<select class="selectpicker form-control" id="myKeySelector">
+						<optgroup label="Personal history">
+						<option>Claims</option> <!-- 0 !-->
+						<option>Me</option> <!-- 1 !-->
+						</optgroup>
+						<optgroup label="Leaderboard">
+						<option>Claims</option> <!-- 2 !-->
+						<option>Tower builds</option> <!-- 3 !-->
+						<option>Previous moons</option> <!-- 4 !-->
+						</optgroup>
+						<optgroup label="Hall of fame">
+						<option>First tower in country</option> <!-- 5 !-->
+						</optgroup>
+						<optgroup label="Towers">
+						<option>Metadata</option> <!-- 6 !-->
+						<option>Statistics</option> <!-- 7 !-->
+						</optgroup>
+						<optgroup label="Other">
+						<option>Date and time for new moons</option> <!-- 8 !-->
+						</optgroup>
+					</select>
+					</div>
+				</div>
+			</div>
+		<!--</form>!-->
+        </div>
+		</div>
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-2">
+				<a href="#" class="">
+					<div class="jumbotron">
+						<!--<button class="btn btn-link btn-block" type="button">!-->
+							<span style="font-size:3em;" class="glyphicon glyphicon-menu-left"></span> 
+						<!--</button>!-->
+					</div>
+					</a>
+				</div>
+				<div class="col-sm-8">
+					<div class="jumbotron">
+					<!-- <canvas id="canvas" width="300" height="300">
+					</canvas> !-->
+					
+					<div class="row">
+						<div class="col-sm-6">
+						<div class="form-group">
+							<label>Value</label>
+						<select class="selectpicker form-control" id="myPresetSelector">
+							<option>Average number of claimed Towers</option>
+							<option>Average amount of collected geld</option>	
+							<option>Total Towers built</option>
+							<option>Total Towers owned</option>
+						</select>
+						</div>
+						</div>
+						<div class="col-sm-2">
+						</div>
+						<div class="col-sm-4">
+						<div class="form-group">
+							<label>Timeframe</label>
+						<select class="selectpicker form-control" id="myTimeframeSelector">
+							<option>All Time</option>
+							<option>Yearly</option>	
+							<option>Monthly</option>
+							<option>Daily</option>
+						</select>
+						</div>
+						</div>
+					</div>
+					
+					<div class="row">
+					<ul class="listNoBullet" id="myKeyList">
+						
+					</ul>
+					</div>
+
+					</div>
+				</div>
+				<div class="col-sm-2">
+				<a href="#" class="">
+					<div class="jumbotron">
+					<!--<button class="btn btn-link btn-block" type="button">!-->
+							<span style="font-size:3em;" class="glyphicon glyphicon-menu-right"></span> 
+						<!--</button>!-->
+					</div>
+				</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+    <% include partials/scripts.ejs %>
+
+    <script type="text/javascript">
+    jQuery(window).load(function () {
+    
+	//ev.preventDefault();
+	/*
+    $.ajax({
+            type: 'post',
+            url: '/lastKey',
+            data: {},
+            success: function (data) {
+          
+            	$("#currKey").empty();
+    			$("#currKey").append(data);
+            }
+        });
+	});
+	ev.preventDefault();
+	*/
+    </script>
+
+    <script type="text/javascript">
+    var form = $('#myKey');
+    form.submit(function (ev) {
+    	ev.preventDefault();
+    	$("#currKey").empty();
+    	$("#currKey").append($('#keyTextField').val());
+
+        $.ajax({
+            type: form.attr('method'),
+            url: form.attr('action'),
+            data: {myApiKey: $('#keyTextField').val(), myKeySelector: $('#myKeySelector option:selected').index('option')},
+            success: function (data) {
+          
+            	var parsedData = JSON.parse(data);
+            	if(data.length > 0){
+          			//stat = obj;
+          			$("#myKeyList").empty();
+          			for (var key in parsedData[0]){
+              			var attrName = key;
+              			var attrValue = parsedData[0][key];
+
+              			$("#myKeyList").append("<li> <p>" + attrName + " : " + attrValue + "</p> </li>");
+              			//console.log(attrName + ' : ' + attrValue);
+         			}
+        		}
+            	
+            	console.log("Success!");
+                //alert('hello');
+            }
+        });
+
+        ev.preventDefault();
+    });
+	</script>
+	<script type="text/javascript">
+	var selector = $('#myKeySelector');
+	selector.on('change', function(){
+		var selected = $('#myKeySelector option:selected').index('option');
+		//alert(selected);
+
+		$("#myPresetSelector").empty();
+		switch(selected){
+			case 0:
+				$("#myPresetSelector").append("<option>Average number of claimed Towers</option>");
+				$("#myPresetSelector").append("<option>Average amount of collected geld</option>");
+				$("#myPresetSelector").append("<option>Total Towers built</option>");
+				$("#myPresetSelector").append("<option>Total Towers owned</option>");
+			break;
+			case 1:
+				
+			break;
+			case 2:
+				$("#myPresetSelector").append("<option>Average number of claimed Towers</option>");
+				$("#myPresetSelector").append("<option>Average amount of collected geld</option>");
+				$("#myPresetSelector").append("<option>Contested areas</option>");
+			break;
+			case 3:
+				$("#myPresetSelector").append("<option>Average number of claimed Towers</option>");
+				$("#myPresetSelector").append("<option>Average amount of collected geld</option>");
+				$("#myPresetSelector").append("<option>Contested areas</option>");
+			break;
+			case 4:
+				$("#myPresetSelector").append("<option>Average number of claimed Towers</option>");
+				$("#myPresetSelector").append("<option>Average amount of collected geld</option>");
+				$("#myPresetSelector").append("<option>Contested areas</option>");
+			break;
+			case 5:
+				
+			break;
+			case 6:
+				$("#myPresetSelector").append("<option>Towers built</option>");
+			break;
+			case 7:
+				$("#myPresetSelector").append("<option>Towers built</option>");
+			break;
+			case 8:
+				
+			break;
+		
+		}
+		//alert($("#currKey").text());
+		 $.ajax({
+            type: $('#myKey').attr('method'),
+            url: $('#myKey').attr('action'),
+            data: {myKeySelector: $('#myKeySelector option:selected').index('option')},
+            success: function (data) {
+          
+            	var parsedData = JSON.parse(data);
+            	if(data.length > 0){
+          			//stat = obj;
+          			$("#myKeyList").empty();
+          			for (var key in parsedData[0]){
+              			var attrName = key;
+              			var attrValue = parsedData[0][key];
+
+              			$("#myKeyList").append("<li> <p>" + attrName + " : " + attrValue + "</p> </li>");
+              			//console.log(attrName + ' : ' + attrValue);
+         			}
+        		}      	
+            }
+        });
+	});
+	</script>
+  </body>
+</html>
