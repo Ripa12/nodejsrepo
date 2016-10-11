@@ -1,18 +1,21 @@
 {
-  "name": "towers_app_nodejs",
+  "name": "towers_statistics_app",
   "version": "1.0.0",
-  "description": "Towers app",
+  "private": true,
+  "description": "Application for Towers",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "ripa",
+  "author": "ripa12",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.2",
     "cookie-parser": "^1.4.3",
     "ejs": "^2.5.2",
     "express": "^4.14.0",
-    "express-session": "^1.14.1"
+    "express-session": "^1.14.1",
+    "http": "0.0.0",
+    "request": "^2.75.0"
   }
 }
