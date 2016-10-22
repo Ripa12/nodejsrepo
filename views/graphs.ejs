@@ -47,7 +47,7 @@
 		<p class="navbar-text" id="currKey"> </p> 
 
 		<div class="col-sm-3 col-md-3 pull-right">
-        <form class="navbar-form" id="myKey" role="search" action="/key" method="post">
+        <form class="navbar-form" id="myKey" role="search" action="/setKey" method="post">
         <!--<form class="navbar-form" id="myKey" action="/key">!-->
 		<label for="usr">
 				<span style="color: white;">
@@ -72,29 +72,27 @@
 			<h1>Graph</h1> 
 			<div class="row">
 				<div class="col-xs-6 col-xs-offset-3">
+					<!--
 					<div class="form-group">
 					<select class="selectpicker form-control" id="myKeySelector">
 						<optgroup label="Personal history">
-						<option>Claims</option> <!-- 0 !-->
-						<option>Me</option> <!-- 1 !-->
+						<option>Me</option> 
 						</optgroup>
 						<optgroup label="Leaderboard">
-						<option>Claims</option> <!-- 2 !-->
-						<option>Tower builds</option> <!-- 3 !-->
-						<option>Previous moons</option> <!-- 4 !-->
-						</optgroup>
-						<optgroup label="Hall of fame">
-						<option>First tower in country</option> <!-- 5 !-->
+						<option>Players</option> 
 						</optgroup>
 						<optgroup label="Towers">
-						<option>Metadata</option> <!-- 6 !-->
-						<option>Statistics</option> <!-- 7 !-->
+						<option>Towers</option> 
+						</optgroup>
+						<optgroup label="Hall of fame">
+						<option>First tower in country</option> 
 						</optgroup>
 						<optgroup label="Other">
-						<option>Date and time for new moons</option> <!-- 8 !-->
+						<option>Date and time for new moons</option> 
 						</optgroup>
 					</select>
 					</div>
+					!-->
 				</div>
 			</div>
 		<!--</form>!-->
@@ -102,30 +100,60 @@
 		</div>
 		<div class="container">
 			<div class="row">
-				<div class="col-sm-2">
+				<!--<div class="col-sm-2">
 				<a href="#" class="">
 					<div class="jumbotron">
-						<!--<button class="btn btn-link btn-block" type="button">!-->
+						
 							<span style="font-size:3em;" class="glyphicon glyphicon-menu-left"></span> 
-						<!--</button>!-->
+						
 					</div>
 					</a>
-				</div>
-				<div class="col-sm-8">
+				</div>!-->
+				<div class="col-sm-12">
 					<div class="jumbotron">
 					<!-- <canvas id="canvas" width="300" height="300">
 					</canvas> !-->
-					
+
+					<div class="row">
+						<div class="col-sm-6">
+							<form id="groupByFormID">
+							<label>Group by: </label>
+							<label class="radio-inline"><input type="radio" name="groupByRadio" id="overallRadioID" checked="checked" value="1">Overall</label>
+							<label class="radio-inline"><input type="radio" name="groupByRadio" id="towerRadioID" value="2">Most popular tower</label>
+							<label class="radio-inline"><input type="radio" name="groupByRadio" id="locationRadioID" value="3">Most popular location</label>
+							</form>
+						</div>
+					</div>
 					<div class="row">
 						<div class="col-sm-6">
 						<div class="form-group">
-							<label>Value</label>
+							<label>Value</label>							
+							<select class="selectpicker form-control" id="myPresetSelector">
+								<optgroup label="Personal history">
+									<option>Number of claimed Towers</option>
+									<option>Number of built Towers</option>	
+									<option>Amount of geld collected</option>
+									<option>Amount of bonus collected</option>	
+								</optgroup>
+								<optgroup label="All Players">
+									<option>Number of built Towers</option> 
+								</optgroup>
+								<optgroup label="Leaderboard">
+									<option>Most claims</option>  
+									<option>Most built towers</option>  
+									<option>Most geld collected</option> 
+									<option>Highest geld bonus</option> 
+								</optgroup>
+			
+							</select>
+					
+							<!--
 						<select class="selectpicker form-control" id="myPresetSelector">
-							<option>Average number of claimed Towers</option>
-							<option>Average amount of collected geld</option>	
-							<option>Total Towers built</option>
-							<option>Total Towers owned</option>
+							<option>Number of claimed Towers</option>
+							<option>Number of built Towers</option>	
+							<option>Amount of geld collected</option>						
 						</select>
+						!-->
 						</div>
 						</div>
 						<div class="col-sm-2">
@@ -134,32 +162,63 @@
 						<div class="form-group">
 							<label>Timeframe</label>
 						<select class="selectpicker form-control" id="myTimeframeSelector">
-							<option>All Time</option>
-							<option>Yearly</option>	
-							<option>Monthly</option>
-							<option>Daily</option>
+							<option>All time</option>
+							<option>Per New Moon</option>
+							<option>Per day</option>	
+							<option>Per day in month</option>	
+							<option>Per hour in week</option>	
 						</select>
 						</div>
 						</div>
 					</div>
+					<div class="row">
+						<div class="col-sm-3">
+							<div class="form-group">
+								<label>From</label>
+									<select class="selectpicker form-control" id="myFromMoonSelector"> </select>
+							</div>
+						</div>
+						<div class="col-sm-3">
+							<div class="form-group">
+								<label>To</label>
+									<select class="selectpicker form-control" id="myToMoonSelector"> </select>
+							</div>
+						</div>
+						<div class="col-sm-3">
+							<div class="form-group">
+								<label>Chart Type</label>
+									<select class="selectpicker form-control" id="myChartType"> 
+										<option>Line</option>
+										<option>Bar</option>
+										<option>Pie</option>
+									</select>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-sm-3">
+							<div class="form-group">
+								<button type="button" id="generateBtn" class="btn btn-primary btn-lg">Generate</button>
+							</div>
+						</div>
+					</div>
 					
 					<div class="row">
-					<ul class="listNoBullet" id="myKeyList">
-						
-					</ul>
+						<canvas id="myChart" width="300" height="200"></canvas>
+					<!--<ul class="listNoBullet" id="myKeyList">	</ul> !-->
 					</div>
 
 					</div>
 				</div>
-				<div class="col-sm-2">
+				<!--<div class="col-sm-2">
 				<a href="#" class="">
 					<div class="jumbotron">
-					<!--<button class="btn btn-link btn-block" type="button">!-->
+					
 							<span style="font-size:3em;" class="glyphicon glyphicon-menu-right"></span> 
-						<!--</button>!-->
+						
 					</div>
 				</a>
-				</div>
+				</div>!-->
 			</div>
 		</div>
 	</div>
@@ -167,26 +226,72 @@
     <% include partials/scripts.ejs %>
 
     <script type="text/javascript">
-    jQuery(window).load(function () {
-    
-	//ev.preventDefault();
-	/*
+    /*
+    jQuery(window).load(function (ev) {
+
     $.ajax({
             type: 'post',
-            url: '/lastKey',
+            url: '/newMoons',
             data: {},
             success: function (data) {
           
-            	$("#currKey").empty();
-    			$("#currKey").append(data);
+          		var parsedData = JSON.parse(data);
+          		var todayDate = new Date().toJSON().slice(0,10).replace(/\-/g, '/');
+          		//alert(todayDate);
+            	
+            	$("#myFromMoonSelector").empty();
+            	for (var outKey in parsedData) {
+   					var outObject = parsedData[outKey];
+    					var newMoonDate = outObject['iso8601'].substring(0, 10).replace(/\-/g, '/');
+    					if(todayDate > newMoonDate){
+        				$("#myFromMoonSelector").append("<option>" + newMoonDate
+              			+ "</option>");
+              			$("#myToMoonSelector").append("<option>" + newMoonDate
+              			+ "</option>");
+        			}
+  				}
+ 				$("#myToMoonSelector").find("option").eq(0).remove();
+            	ev.preventDefault();
             }
         });
+	});*/
+
+	var toSelector = $('#myFromMoonSelector');
+	toSelector.on('change', function(){
+		var selectedDate = $('#myFromMoonSelector option:selected').val();
+
+		$("#myToMoonSelector").empty();
+		$("#myFromMoonSelector > option").each(function() {
+    		if(this.text > selectedDate){
+    			$("#myToMoonSelector").append("<option>" + this.text
+              			+ "</option>");
+    		}
+		});
+        
+ 				
+    	ev.preventDefault();
+
 	});
-	ev.preventDefault();
-	*/
+
+	$('#groupByFormID').on("change", 'input:radio[name=groupByRadio]:checked', function(ev) {
+    		//alert(String(ev.target.id));
+    		//alert($(this).attr('id'));
+    		//alert("hello");
+    		if(String(ev.target.id) === 'overallRadioID'){
+    			
+        	}
+        	else if(String(ev.target.id) === 'towerRadioID'){
+    			
+        	}
+        	else if(String(ev.target.id) === 'locationRadioID'){
+    			
+        	}
+	});
+
     </script>
 
     <script type="text/javascript">
+    var myChart = null;
     var form = $('#myKey');
     form.submit(function (ev) {
     	ev.preventDefault();
@@ -196,31 +301,158 @@
         $.ajax({
             type: form.attr('method'),
             url: form.attr('action'),
-            data: {myApiKey: $('#keyTextField').val(), myKeySelector: $('#myKeySelector option:selected').index('option')},
+            data: {
+            		myApiKey: $('#keyTextField').val()
+            	},
             success: function (data) {
-          
-            	var parsedData = JSON.parse(data);
-            	if(data.length > 0){
-          			//stat = obj;
-          			$("#myKeyList").empty();
-          			for (var key in parsedData[0]){
-              			var attrName = key;
-              			var attrValue = parsedData[0][key];
-
-              			$("#myKeyList").append("<li> <p>" + attrName + " : " + attrValue + "</p> </li>");
-              			//console.log(attrName + ' : ' + attrValue);
-         			}
-        		}
+          		
+          		if(data.length > 0){
+            		var parsedData = JSON.parse(data);
+          			var todayDate = new Date().toJSON().slice(0,10).replace(/\-/g, '/');
+          			//alert(todayDate);
             	
-            	console.log("Success!");
-                //alert('hello');
+            		$("#myFromMoonSelector").empty();
+            		for (var outKey in parsedData) {
+   						var outObject = parsedData[outKey];
+    						var newMoonDate = outObject['iso8601'].substring(0, 10).replace(/\-/g, '/');
+    						if(todayDate > newMoonDate){
+        					$("#myFromMoonSelector").append("<option>" + newMoonDate
+              				+ "</option>");
+              				$("#myToMoonSelector").append("<option>" + newMoonDate
+              				+ "</option>");
+        				}
+  					}
+ 					$("#myToMoonSelector").find("option").eq(0).remove();
+            		ev.preventDefault();
+            	}
             }
         });
 
-        ev.preventDefault();
+       // ev.preventDefault();
     });
+
+	var generateBtn = $('#generateBtn');
+
+	generateBtn.click(function (ev) {
+		ev.preventDefault();
+
+		$.ajax({
+            type: 'post',
+            url: '/graphKey',
+            data: {myFromDate: $('#myFromMoonSelector option:selected').val(),
+            	myToDate: $('#myToMoonSelector option:selected').val(),
+            	//myApiKey: $('#keyTextField').val(), 
+            	myGroupByRadio: $('input[name=groupByRadio]:checked', '#groupByFormID').val(),
+            	myPresetSelector: $('#myPresetSelector option:selected').index('option'),
+            	myTimeframeSelector: $('#myTimeframeSelector').prop("selectedIndex")
+            	/*myKeySelector: $('#myKeySelector option:selected').index('option')*/},
+            success: function (data) {
+          
+            	var parsedData = JSON.parse(data);
+            	
+            	if(data.length > 0){
+
+          			var timeAxisArray = [];
+          			//var valueAxisArray = []; 
+          
+              		for (var timeKey in parsedData['timeAxle']){
+              			//alert(parsedData['timeAxle'][timeKey]);
+              			timeAxisArray.push(parsedData['timeAxle'][timeKey]);
+              		}
+              		/*
+              		for (var valueKey in parsedData['valueAxle']){
+              			//alert(parsedData['timeAxle'][timeKey]);
+              			valueAxisArray.push(parsedData['valueAxle'][valueKey]);
+              		}
+              		*/
+
+         			var ctx = document.getElementById('myChart').getContext('2d');
+         			if(myChart != null){
+      					myChart.destroy();	
+      				}
+      				
+      				
+      					var newDatasets = [];
+      					//var newColours = [];
+      					var newBackColour = ["rgba(0,0,0,0)"];
+      					//alert(JSON.stringify(parsedData));
+      					if(($('#myChartType').val().toLowerCase() === 'pie') && ($('#myPresetSelector option:selected').index('option') > 4)){
+      						var pieDataSet = [];
+      						var pieColours = [];
+      						timeAxisArray = [];
+      						
+      						for (var i = 0; i < parsedData['valueAxle'].length; i++) {
+      							pieDataSet.push(parsedData['valueAxle'][i][1]);
+      							timeAxisArray.push(parsedData['valueAxle'][i][0]);
+      							pieColours.push("rgba(" + Math.floor(Math.random() * 255) + "," + 
+      										Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ",1)");
+
+      							
+      						}
+      						newDatasets[0] = {
+      									data: pieDataSet,
+      									backgroundColor: pieColours
+    						};
+      					}
+      					else{
+      						for (var i = 0; i < parsedData['valueAxle'].length; i++) {
+      						
+      							if($('#myChartType').val().toLowerCase() === 'bar' || $('#myChartType').val().toLowerCase() === 'pie'){
+      								var tempColour = "rgba(" + Math.floor(Math.random() * 255) + "," + 
+      										Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ",1)";
+      								newBackColour = [];
+
+									for (var k = 0; k < (parsedData['valueAxle'][i][1].length); k++) {
+										if($('#myChartType').val().toLowerCase() === 'pie'){
+											newBackColour.push("rgba(" + Math.floor(Math.random() * 255) + "," + 
+      										Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ",1)");
+										}
+										else{
+											newBackColour.push(tempColour);
+										}
+      									
+      								}
+      							}
+      							newDatasets[i] = {
+      									label: parsedData['valueAxle'][i][0],
+      									data: parsedData['valueAxle'][i][1],
+      									borderColor: "rgba(" + Math.floor(Math.random() * 255) + "," + 
+      										Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ",1)",
+      									backgroundColor: newBackColour
+    							};
+      						};	
+      					}				
+				
+      					myChart = new Chart(ctx, {
+  							type: $('#myChartType').val().toLowerCase(),
+  							data: {
+    							labels: timeAxisArray,
+    							datasets: newDatasets
+  							}
+						});										
+        		}           	
+            	console.log("Success!");
+            }
+        });
+	});
 	</script>
+
 	<script type="text/javascript">
+	/*
+	var chartSelector = $('#myChartType');
+	chartSelector.on('change', function(e){
+		e.preventDefault();
+		alert("test");
+		var selectedType = $('#myChartType option:selected').index('option');
+
+		myChart.type = 'bar';
+		myChart.update();
+	});
+	*/
+	</script>
+
+	<script type="text/javascript">
+	/*
 	var selector = $('#myKeySelector');
 	selector.on('change', function(){
 		var selected = $('#myKeySelector option:selected').index('option');
@@ -229,10 +461,9 @@
 		$("#myPresetSelector").empty();
 		switch(selected){
 			case 0:
-				$("#myPresetSelector").append("<option>Average number of claimed Towers</option>");
-				$("#myPresetSelector").append("<option>Average amount of collected geld</option>");
-				$("#myPresetSelector").append("<option>Total Towers built</option>");
-				$("#myPresetSelector").append("<option>Total Towers owned</option>");
+				$("#myPresetSelector").append("<option>Number of claimed Towers</option>");
+				$("#myPresetSelector").append("<option>Number of built Towers</option>");
+				$("#myPresetSelector").append("<option>Amount of geld collected</option>");
 			break;
 			case 1:
 				
@@ -267,6 +498,7 @@
 		
 		}
 		//alert($("#currKey").text());
+		
 		 $.ajax({
             type: $('#myKey').attr('method'),
             url: $('#myKey').attr('action'),
@@ -287,7 +519,9 @@
         		}      	
             }
         });
+		
 	});
+	*/
 	</script>
   </body>
 </html>

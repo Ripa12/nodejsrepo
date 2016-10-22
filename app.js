@@ -34,10 +34,12 @@ app.get('/Table.html', routes.tablePage);
 app.get('/Graph.html', routes.graphPage);
 
 // get key
-app.post('/lastKey', routes.getLastKey);
+app.post('/newMoons', routes.getNewMoons);
 
 // search-bar
-app.post('/key', routes.searchItem);
+app.post('/setKey', routes.setKey);
+app.post('/graphKey', routes.updateGraph);
+app.post('/tableKey', routes.updateTable);
 
 // 404 or 500
 app.get('*', routes.notFound);
