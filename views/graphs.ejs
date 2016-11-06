@@ -45,6 +45,8 @@
 		
 		<p class="navbar-text">Current Key: <%= currentKey %> </p> 
 		<p class="navbar-text" id="currKey"> </p> 
+		<p class="navbar-text">Player: </p> 
+		<p class="navbar-text" id="currPlayer"></p> 
 
 		<div class="col-sm-3 col-md-3 pull-right">
         <form class="navbar-form" id="myKey" role="search" action="/setKey" method="post">
@@ -53,7 +55,7 @@
 				<span style="color: white;">
 					<h4> Key:  </h4>
 				</span>
-			</label>
+		</label>
         <div class="input-group">
             <!--<form action="/add" method="post"> !-->
 			<input type="text" name="newItem" id="keyTextField" placeholder="Enter key">
@@ -121,7 +123,24 @@
 							<label class="radio-inline"><input type="radio" name="groupByRadio" id="overallRadioID" checked="checked" value="1">Overall</label>
 							<label class="radio-inline"><input type="radio" name="groupByRadio" id="towerRadioID" value="2">Most popular tower</label>
 							<label class="radio-inline"><input type="radio" name="groupByRadio" id="locationRadioID" value="3">Most popular location</label>
+							<label class="radio-inline"><input type="radio" name="groupByRadio" id="dateRadioID" value="4">Most popular date</label>
+							<label class="radio-inline"><input type="radio" name="groupByRadio" id="monthRadioID" value="5">Most popular month</label>
+							<label class="radio-inline"><input type="radio" name="groupByRadio" id="hourRadioID" value="6">Most popular hour</label>
 							</form>
+						</div>
+						<div class="col-sm-2 pull-right">
+							<div class="form-group">
+								<label>Number of selections</label>
+									<select class="selectpicker form-control" id="mySelectionRange"> 
+										<option>1</option>
+										<option>2</option>
+										<option>3</option>
+										<option>4</option>
+										<option>5</option>
+										<option>6</option>
+										<option>7</option>
+									</select>
+							</div>
 						</div>
 					</div>
 					<div class="row">
@@ -130,19 +149,20 @@
 							<label>Value</label>							
 							<select class="selectpicker form-control" id="myPresetSelector">
 								<optgroup label="Personal history">
-									<option>Number of claimed Towers</option>
-									<option>Number of built Towers</option>	
-									<option>Amount of geld collected</option>
-									<option>Amount of bonus collected</option>	
+									<option value='0'>Number of claimed Towers</option>
+									<option value='9'>Number of claims on other players' Towers</option>
+									<option value='1'>Number of built Towers</option>	
+									<option value='2'>Amount of geld collected</option>
+									<option value='3'>Amount of bonus collected</option>	
 								</optgroup>
 								<optgroup label="All Players">
-									<option>Number of built Towers</option> 
+									<option value='4'>Number of built Towers</option> 
 								</optgroup>
 								<optgroup label="Leaderboard">
-									<option>Most claims</option>  
-									<option>Most built towers</option>  
-									<option>Most geld collected</option> 
-									<option>Highest geld bonus</option> 
+									<option value='5'>Most claims</option>  
+									<option value='6'>Most built towers</option>  
+									<option value='7'>Most geld collected</option> 
+									<option value='8'>Highest geld bonus</option> 
 								</optgroup>
 			
 							</select>
@@ -184,7 +204,7 @@
 									<select class="selectpicker form-control" id="myToMoonSelector"> </select>
 							</div>
 						</div>
-						<div class="col-sm-3">
+						<div class="col-sm-3 pull-right">
 							<div class="form-group">
 								<label>Chart Type</label>
 									<select class="selectpicker form-control" id="myChartType"> 
@@ -226,22 +246,23 @@
     <% include partials/scripts.ejs %>
 
     <script type="text/javascript">
-    /*
-    jQuery(window).load(function (ev) {
-
-    $.ajax({
+    function refreshMoonData(){
+    	$.ajax({
             type: 'post',
             url: '/newMoons',
             data: {},
             success: function (data) {
-          
           		var parsedData = JSON.parse(data);
+          		var parsedMoonData = JSON.parse(parsedData['moonData']);
+
           		var todayDate = new Date().toJSON().slice(0,10).replace(/\-/g, '/');
-          		//alert(todayDate);
             	
+          		$("#currPlayer").empty();
+    			$("#currPlayer").append(parsedData['playerAlias']);
+
             	$("#myFromMoonSelector").empty();
-            	for (var outKey in parsedData) {
-   					var outObject = parsedData[outKey];
+            	for (var outKey in parsedMoonData) {
+   					var outObject = parsedMoonData[outKey];
     					var newMoonDate = outObject['iso8601'].substring(0, 10).replace(/\-/g, '/');
     					if(todayDate > newMoonDate){
         				$("#myFromMoonSelector").append("<option>" + newMoonDate
@@ -250,11 +271,20 @@
               			+ "</option>");
         			}
   				}
+  				$("#myFromMoonSelector").append("<option>" + todayDate
+              			+ "</option>");
+              	$("#myToMoonSelector").append("<option>" + todayDate
+              			+ "</option>");
+
  				$("#myToMoonSelector").find("option").eq(0).remove();
             	ev.preventDefault();
             }
         });
-	});*/
+    };
+
+    jQuery(window).load(function (ev) {
+    	refreshMoonData();
+	});
 
 	var toSelector = $('#myFromMoonSelector');
 	toSelector.on('change', function(){
@@ -306,7 +336,14 @@
             	},
             success: function (data) {
           		
-          		if(data.length > 0){
+          		if(data != null){
+          			var parsedData = JSON.parse(data);
+          			//alert(parsedData["playerId"]);
+          			if(parsedData["playerId"]){
+          				refreshMoonData();
+          			}
+          		}
+          		/*if(data.length > 0){
             		var parsedData = JSON.parse(data);
           			var todayDate = new Date().toJSON().slice(0,10).replace(/\-/g, '/');
           			//alert(todayDate);
@@ -324,7 +361,7 @@
   					}
  					$("#myToMoonSelector").find("option").eq(0).remove();
             		ev.preventDefault();
-            	}
+            	}*/
             }
         });
 
@@ -343,7 +380,8 @@
             	myToDate: $('#myToMoonSelector option:selected').val(),
             	//myApiKey: $('#keyTextField').val(), 
             	myGroupByRadio: $('input[name=groupByRadio]:checked', '#groupByFormID').val(),
-            	myPresetSelector: $('#myPresetSelector option:selected').index('option'),
+            	myPresetSelector: $('#myPresetSelector option:selected').val(),
+            	mySelectionRange: $('#mySelectionRange option:selected').val(),
             	myTimeframeSelector: $('#myTimeframeSelector').prop("selectedIndex")
             	/*myKeySelector: $('#myKeySelector option:selected').index('option')*/},
             success: function (data) {
@@ -376,7 +414,7 @@
       					//var newColours = [];
       					var newBackColour = ["rgba(0,0,0,0)"];
       					//alert(JSON.stringify(parsedData));
-      					if(($('#myChartType').val().toLowerCase() === 'pie') && ($('#myPresetSelector option:selected').index('option') > 4)){
+      					if(($('#myChartType').val().toLowerCase() === 'pie') && (($('#myPresetSelector option:selected').index('option') > 4) || ($('input[name=groupByRadio]:checked', '#groupByFormID').val() > 3))){
       						var pieDataSet = [];
       						var pieColours = [];
       						timeAxisArray = [];
@@ -384,8 +422,14 @@
       						for (var i = 0; i < parsedData['valueAxle'].length; i++) {
       							pieDataSet.push(parsedData['valueAxle'][i][1]);
       							timeAxisArray.push(parsedData['valueAxle'][i][0]);
-      							pieColours.push("rgba(" + Math.floor(Math.random() * 255) + "," + 
+      							//alert(parsedData['valueAxle'][i][0]);
+      							if(parsedData['valueAxle'][i][0] === $("#currPlayer").html()){
+      								pieColours.push("rgba(10, 10, 10 ,1)");
+      							}
+      							else{
+      								pieColours.push("rgba(" + Math.floor(Math.random() * 255) + "," + 
       										Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ",1)");
+      							}
 
       							
       						}
@@ -404,11 +448,20 @@
 
 									for (var k = 0; k < (parsedData['valueAxle'][i][1].length); k++) {
 										if($('#myChartType').val().toLowerCase() === 'pie'){
-											newBackColour.push("rgba(" + Math.floor(Math.random() * 255) + "," + 
-      										Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ",1)");
+											if(parsedData['valueAxle'][i][0] === $("#currPlayer").html()){
+      											newBackColour.push("rgba(10, 10, 10 ,1)");
+      										}
+      										else{
+												newBackColour.push("rgba(" + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ",1)");
+											}
 										}
 										else{
-											newBackColour.push(tempColour);
+											if(parsedData['valueAxle'][i][0] === $("#currPlayer").html()){
+      											newBackColour.push("rgba(10, 10, 10 ,1)");
+      										}
+      										else{
+												newBackColour.push(tempColour);
+											}
 										}
       									
       								}

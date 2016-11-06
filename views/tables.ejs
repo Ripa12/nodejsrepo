@@ -26,6 +26,38 @@
 			background-size: cover;
 			
 		}
+		.hiddenRow{
+			display:none;
+		}
+
+		table {
+    		width: 100%;
+		}
+		tbody {
+        	overflow-y: scroll;
+        	overflow-x: hidden;
+        	display: block;
+        	max-height: 30em;  
+        	height: auto;  
+    	}
+    	thead {    
+      		overflow: scroll;     
+       	 	display: table;  
+        	width: 98.3%;   
+       	 	table-layout: fixed;  
+    	}
+    	tbody tr {
+       	 	display: table;
+        	width: 100%; 
+        	table-layout: fixed;   
+   		}
+    	th, td {
+      		table-layout: fixed; 
+        	width: auto; 
+        	overflow: hidden; 
+        	text-overflow: ellipsis;
+   			/*white-space: nowrap;*/ 
+   		} 
 	</style>
 
   </head>
@@ -47,7 +79,7 @@
 		<p class="navbar-text" id="currKey"> </p> 
 
 		<div class="col-sm-3 col-md-3 pull-right">
-        <form class="navbar-form" id="myKey" role="search" action="/tableKey" method="post">
+        <form class="navbar-form" id="myKey" role="search" action="/setKey" method="post">
         <!--<form class="navbar-form" id="myKey" action="/key">!-->
 		<label for="usr">
 				<span style="color: white;">
@@ -101,30 +133,123 @@
 		<!--</form>!-->
         </div>
 		</div>
+
 		<div class="container">
-			<div class="row">
-				<div class="col-sm-12">
-					<div class="jumbotron">
-						<div class="table-responsive table-bordered table-hover 
-						table-condensed">
-							<table class="table" id="keyTable">
-								<thead>
+			<div class="jumbotron">
+
+                <fieldset id="myFilterform">
+                    <div class="row">
+                    <div class="col-xs-3">
+                        <div class="form-group">
+                            <label>Value</label>
+                            <input type="text" class="form-control filterFieldClass" name="filterField" id="filterFieldID" placeholder="">
+                        </div>
+                    </div>
+                    <div class="col-xs-2">
+                            <div class="form-group">
+                                <label>Type</label>
+                                <select class="selectpicker form-control filterTypeClass" id="filterTypeID">
+                                    <option value="0">></option>
+                                    <option value="1"><</option>
+                                    <option value="4">>=</option>
+                                    <option value="5"><=</option>
+                                    <option value="2">equal</option>
+                                    <option value="3">like</option>
+                                </select>
+                            </div>
+                    </div>
+                    <div class="col-xs-3">
+                            <div class="form-group">
+                                <label>Column</label>
+                                <select class="selectpicker form-control filterColumnClass" id="filterColumnID"></select>
+                            </div>
+                    </div>
+                    <!--<div class="col-xs-2">
+                        <div class="form-group">
+                            <button type="button" id="filterBtn" class="btn btn-primary btn-sm">Filter</button>
+                        </div>
+                    </div>!-->
+                </div>
+                </fieldset>
+                <input type="button" value="Add a field" class="add" id="add" />
+                <!--<button type="button" id="filterBtn" class="btn btn-primary btn-sm">Filter</button>!-->
+
+				
+			</div>
+		</div>
+
+		<div class="container">
+			<div class="jumbotron">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Table</label>
+                            <button type="button" id="generateBtn" class="btn btn-primary btn-md form-control">Load</button>
+                            <button type="button" id="refreshBtn" class="btn btn-primary btn-md hidden form-control">Refresh</button>
+                        </div>
+                    </div>
+                   
+                    <div class="col-sm-3">
+                       
+                    </div>
+
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Sort</label>
+                            <select class="selectpicker form-control sortColumnClass" id="sortColumnID"></select>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Order</label>
+                            <select class="selectpicker form-control orderColumnClass" id="orderColumnID">
+                            <option>None</option>
+                            <option>Asc</option>
+                            <option>Desc</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                    <div class="col-xs-5">
+                        <button type="button" id="leftPageBtn" class="btn btn-default"><span class="glyphicon glyphicon-menu-left"></span></button>
+                    </div>
+                    <div class="col-xs-1">
+                        <input type="text"class="form-control"name="currentPageField"id="currentPageFieldID"placeholder="0"onchange="pageLimit();"onkeyup="this.pageLimit();"onpaste="this.pageLimit();"oninput="this.pageLimit();">
+                    </div>
+                    <div class="col-xs-1">
+                        <input type="text"class="form-control"name="maxPageField"id="maxPageFieldID"placeholder="0" readonly>
+                    </div>
+                    <div class="col-xs-5">
+                        <button type="button" id="rightPageBtn" class="btn btn-default pull-right"><span class="glyphicon glyphicon-menu-right"></span></button>
+                    </div>
+                    </div>
+                </div>
+
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="table-responsive">
+							<table class="table table-bordered table-hover tablesorter" id="keyTable">
+								<thead id="towerTableHeadID">
 								<tr>
 									<th>Example</th>
 									<th>Example</th>
 									<th>Example</th>
 								</tr>
 								</thead>
-								<tbody>
+								<tbody id="towerTableBodyID">
 								<tr>
-									<td>Example</td>
-									<td>Example</td> 
-									<td>Example</td>
+									<td>1</td>
+									<td>2</td> 
+									<td>3</td>
 								</tr>
 								<tr>
-									<td>Example</td>
-									<td>Example</td> 
-									<td>Example</td>
+									<td>5</td>
+									<td>4</td> 
+									<td>7</td>
 								</tr>
 								</tbody>
 							</table>
@@ -138,10 +263,208 @@
     <% include partials/scripts.ejs %>
   
   	<script type="text/javascript">
-    jQuery(window).load(function () {
+  	
+  	$(document).ready(function(){ 
+    	//alert('sorter');
+        $("#keyTable").tablesorter();  
+    });
+
+        //alert('sorter');
+        $("#add").click(function() {
+            var intId = $("#myFilterform div").length + 1;
+            var filterRowWrapper = $("<div class=\"row\" id=\"field" + intId + "\"/>");
+            var fValue = $("<div class=\"col-xs-3\"><div class=\"form-group\"><label>Value</label> <input type=\"text\" class=\"form-control filterFieldClass\" id=\"filterFieldID" + intId + "\"/></div></div>");
+            
+            var fType = $("<div class=\"col-xs-2\"><div class=\"form-group\"><label>Type</label><select class=\"selectpicker form-control filterTypeClass\" id=\"filterTypeID" + intId + "\"> <option value=\"0\">></option><option value=\"1\"><</option><option value=\"4\">>=</option><option value=\"5\"><=</option><option value=\"2\">equal</option><option value=\"3\">like</option></select></div></div>");
+
+            var fColumn = $("<div class=\"col-xs-3\"><div class=\"form-group\"><label>Column</label><select class=\"selectpicker form-control filterColumnClass\" id=\"filterColumnID" + intId + "\"></select></div></div>");
+
+            $("#filterColumnID > option").each(function() {
+                //$("#filterColumnID" + intId)
+                fColumn.find("select.selectpicker").append("<option>" + this.text
+                        + "</option>");
+            });
+
+            var removeButton = $("<div class=\"col-xs-1\"><label>Remove</label><input type=\"button\" class=\"remove btn btn-primary btn-md\" value=\"-\" /></div>");
+            removeButton.click(function() {
+                $(this).parent().remove();
+            });
+            filterRowWrapper.append(fValue);
+            filterRowWrapper.append(fType);
+            filterRowWrapper.append(fColumn);
+            filterRowWrapper.append(removeButton);
+            $("#myFilterform").append(filterRowWrapper);
+        });
+
+
+  	$('#filterBtn').on('click', function (ev) {
+        	ev.preventDefault();
+        	//alert('ello');
+
+            var filterValArray = [];
+            var filterTypeArray = [];
+            var filterColumnArray = [];
+            $("#myFilterform div.row").each(function() {
+                var thisFilterVal = $(this).find("input.filterFieldClass").first().val();
+                var thisFilterType = $(this).find("select.filterTypeClass option:selected").first().val();
+                var thisFilterColumn = $(this).find("select.filterColumnClass option:selected").first().index();
+
+                filterValArray.push(thisFilterVal);
+                filterTypeArray.push(thisFilterType);
+                filterColumnArray.push(thisFilterColumn);
+                //alert('thisFilterVal: ' + thisFilterVal);
+                //alert('thisFilterType: ' + thisFilterType);
+                //alert('thisFilterColumn: ' + thisFilterColumn);
+            });
+        	//var tableHeadArray = [];
+  
+            var thArray = [];
+            $('#towerTableHeadID tr').find('th').each(function(){
+                thArray.push($(this).text());
+                //alert($(this).text());
+            });
+            //tableBodyArray.push(thArray);     
+   
+
+        	var tableBodyArray = [];
+    		$('#towerTableBodyID tr').each(function(){
+            	var tdArray = [];
+            	$(this).find('td').each(function(){
+                	tdArray.push($(this).text());
+            	});
+            	tableBodyArray.push(tdArray);     
+    		});
+
+    		$("#towerTableHeadID").empty();
+            $("#towerTableBodyID").empty();
+
+            $("#towerTableHeadID").append("<tr><th>"+thArray.join("</th><th>")+"</th>"+"</tr>");
+            //filterTypeID
+    		for(row = 0; row < tableBodyArray.length; row++){
+    			var valueArray = [];
+    			var filterRow = false;
+    			//style="display:none;"
+        		for(cell = 0; cell < tableBodyArray[row].length; cell++){
+            		//alert('row: '+row+', cell: '+cell+' value: '+tableBodyArray[row][cell]) ;  
+            		valueArray[cell] = "<td>" + tableBodyArray[row][cell] + "</td>";
+            		//alert('cell: ' + cell);
+            		//alert('$(\'#filterColumnID option:selected\').index(): ' + $('#filterColumnID option:selected').index());
+                    for (var fCounter = 0; fCounter < filterColumnArray.length; fCounter++) {
+                     
+            		//if(cell === $('#filterColumnID option:selected').index()){
+                    if(cell === filterColumnArray[fCounter]){
+            			//alert($('#filterColumnID option:selected').index());
+            			//if(!isNaN(parseFloat(tableBodyArray[row][cell]))){
+                        if((/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/.test(tableBodyArray[row][cell])) && (/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/.test(filterValArray[fCounter]))){
+                            
+            				//alert(tableBodyArray[row][cell]);
+            				//switch($('#filterTypeID option:selected').val()){
+                            switch(filterTypeArray[fCounter]){
+            					case "0" :
+            						//if(tableBodyArray[row][cell] < parseFloat($('#filterFieldID').val())){
+                                    if(tableBodyArray[row][cell] > parseFloat(filterValArray[fCounter])){   
+            							filterRow = true;//filterFieldID
+            						}
+            					break;
+            					case "1" :
+            						if(tableBodyArray[row][cell] < parseFloat(filterValArray[fCounter])){
+            							filterRow = true;
+            						}
+            					break;
+            					case "2" :
+            						if(tableBodyArray[row][cell] != parseFloat(filterValArray[fCounter])){
+            							filterRow = true;
+            						}
+            					break;
+                                case "4" :
+                                    //if(tableBodyArray[row][cell] < parseFloat($('#filterFieldID').val())){
+                                    if(tableBodyArray[row][cell] >= parseFloat(filterValArray[fCounter])){   
+                                        filterRow = true;//filterFieldID
+                                    }
+                                break;
+                                case "5" :
+                                    if(tableBodyArray[row][cell] <= parseFloat(filterValArray[fCounter])){
+                                        filterRow = true;
+                                    }
+                                break;
+            				}
+            				
+            			}
+            			else{
+            				//alert('else');
+            				if(tableBodyArray[row][cell] != null && tableBodyArray[row][cell] != "undefined"){
+            					//alert('not null or undefined');
+            					//alert('#filterTypeID option:selected' + $('#filterTypeID option:selected').val());
+            					
+            					switch(filterTypeArray[fCounter]){
+                                    case "0" :
+                                        var tempCurrentDate = new Date(tableBodyArray[row][cell]);
+                                        var tempFilterDate = new Date(filterValArray[fCounter]);
+                                        if((!isNaN(tempCurrentDate)) && (!isNaN(tempFilterDate))){
+                                            if(tempCurrentDate > tempFilterDate){
+                                                filterRow = true;
+                                            }
+                                        }
+                                    break;
+                                    case "1" :
+                                        var tempCurrentDate = new Date(tableBodyArray[row][cell]);
+                                        var tempFilterDate = new Date(filterValArray[fCounter]);
+                                        if((!isNaN(tempCurrentDate)) && (!isNaN(tempFilterDate))){
+                                            if(tempCurrentDate < tempFilterDate){
+                                                filterRow = true;
+                                            }
+                                        }
+                                    break;
+                                    case "4" :
+                                        var tempCurrentDate = new Date(tableBodyArray[row][cell]);
+                                        var tempFilterDate = new Date(filterValArray[fCounter]);
+                                        if((!isNaN(tempCurrentDate)) && (!isNaN(tempFilterDate))){
+                                            if(tempCurrentDate >= tempFilterDate){
+                                                filterRow = true;
+                                            }
+                                        }
+                                    break;
+                                    case "5" :
+                                        var tempCurrentDate = new Date(tableBodyArray[row][cell]);
+                                        var tempFilterDate = new Date(filterValArray[fCounter]);
+                                        if((!isNaN(tempCurrentDate)) && (!isNaN(tempFilterDate))){
+                                            if(tempCurrentDate <= tempFilterDate){
+                                                filterRow = true;
+                                            }
+                                        }
+                                    break;
+            						case "2" :
+            							if(tableBodyArray[row][cell] != (filterValArray[fCounter])){
+            								filterRow = true;
+            							}
+            						break;
+            						case "3" :
+            							if(tableBodyArray[row][cell].indexOf(filterValArray[fCounter]) < 0){
+            								filterRow = true;
+            							}
+            						break;
+            					}
+            				}
+            			}
+            		}
+                    }
+        		}
+        		if(filterRow === true){
+        			$("#towerTableBodyID").append("<tr class=\"clickable hiddenRow\">"+valueArray+"</tr>");
+        		}
+        		else{
+        			$("#towerTableBodyID").append("<tr class=\"clickable\">"+valueArray+"</tr>");
+        		}
+    		}
+    	
+    		$("#keyTable").tablesorter();
+    		$("#keyTable").trigger("updateAll"); 
+    });
+
+    /*jQuery(window).load(function () {
     
 	//ev.preventDefault();
-	/*
+	
     $.ajax({
             type: 'post',
             url: '/lastKey',
@@ -152,47 +475,209 @@
     			$("#currKey").append(data);
             }
         });
-	});
-	ev.preventDefault();
-	*/
+	});*/
+	
+	
     </script>
 
     <script type="text/javascript">
     var form = $('#myKey');
     form.submit(function (ev) {
-    	ev.preventDefault();
+        ev.preventDefault();
+        $("#currKey").empty();
+        $("#currKey").append($('#keyTextField').val());
+
         $.ajax({
             type: form.attr('method'),
             url: form.attr('action'),
-            data: {myApiKey: $('#keyTextField').val(), myKeySelector: $('#myKeySelector option:selected').index('option')},
+            data: {
+                    myApiKey: $('#keyTextField').val()
+                },
             success: function (data) {
-          
-            	var parsedData = JSON.parse(data);
-            	if(data.length > 0){
-          			//stat = obj;
-          			$("#keyTable").empty();
-
-          			var headers = Object.keys(parsedData[0]);
-          			
-          			$("#keyTable").append("<tr><th>"+headers.join("</th><th>")+"</th></tr>");
-          			
-					for (var outerKey in parsedData){
-              
-              			var innerObject = parsedData[outerKey];
-
-              			var valueArray = Object.keys(innerObject).map(function(key) {
-    						return innerObject[key];
-    					});
-    					//alert(JSON.stringify(valueArray));
-    					$("#keyTable").append("<tr><td>"+valueArray.join("</td><td>")+"</td></tr>");
-              			
-         			}
-        		}
+                
+                if(data === '1'){
+                    
+                }
             }
         });
 
-        ev.preventDefault();
+       // ev.preventDefault();
     });
+
+    function refreshTable(refreshLists){
+
+        $('#rightPageBtn').prop("disabled",true);
+        $('#leftPageBtn').prop("disabled",true);
+
+        var filterValArray = [];
+        var filterTypeArray = [];
+        var filterColumnArray = [];
+        $("#myFilterform div.row").each(function() {
+            var thisFilterVal = $(this).find("input.filterFieldClass").first().val();
+            var thisFilterType = $(this).find("select.filterTypeClass option:selected").first().val();
+            var thisFilterColumn = $(this).find("select.filterColumnClass option:selected").first().index();
+
+            filterValArray.push(thisFilterVal);
+            filterTypeArray.push(thisFilterType);
+            filterColumnArray.push(thisFilterColumn);
+        });
+
+        $.ajax({
+            type: 'post',
+            url: '/tableKey',
+            data: {myApiKey: $('#keyTextField').val(), myKeySelector: $('#myKeySelector option:selected').index('option'), myCurrentPage: $('#currentPageFieldID').val(), myFilterValArray: filterValArray,
+                myFilterTypeArray: filterTypeArray, myFilterColumnArray: filterColumnArray,
+                mySortColumn: $('#sortColumnID option:selected').index(), myOrderColumn: $('#orderColumnID option:selected').index()},
+            success: function (data) {
+                
+                
+                var parsedData = JSON.parse(data);
+                //var parsedTable = JSON.parse(parsedData['tableData']);
+                if(data.length > 0){
+              
+                    $("#maxPageFieldID").empty();
+                    $("#maxPageFieldID").val(parsedData['tableNrOfPages']);
+
+                    $("#towerTableHeadID").empty();
+                    $("#towerTableBodyID").empty();
+
+                    var headers = Object.keys(parsedData['tableData'][0]);
+                    //alert(headers);//.replace(/\_/g, ' ');
+                
+                    $("#towerTableHeadID").append("<tr><th>"+headers.join("</th><th>").replace(/\_/g, ' ')+"</th>"+"</tr>");
+                
+                    if(refreshLists){
+                        $("#filterColumnID").empty();
+                        $("#filterColumnID").append("<option>"+headers.join("</option><option>").replace(/\_/g, ' ')+"</option>");
+
+                        $("#sortColumnID").empty();
+                        $("#sortColumnID").append("<option>"+headers.join("</option><option>").replace(/\_/g, ' ')+"</option>");
+                    }
+
+                    var IdCounter = 0;
+                    for (var outerKey in parsedData['tableData']){
+              
+                        var innerObject = parsedData['tableData'][outerKey];
+
+                        var headCounter = 0;
+                        var valueArray = Object.keys(innerObject).map(function(key) {
+                            return innerObject[key];
+                            //headCounter++;
+                        });
+            
+                        for (var i = 0; i < valueArray.length; i++) {
+                            //valueArray[i] = "<td class=\"" + headers[headCounter] + "\">" + valueArray[i] + "</td>";
+                            valueArray[i] = "<td>" + valueArray[i] + "</td>";
+                        };
+              
+                        $("#towerTableBodyID").append("<tr class=\"clickable\">"+valueArray+"</tr>");
+                   
+                        //IdCounter += 1;
+                    }
+                } 
+
+                $("#keyTable").tablesorter(); 
+
+                $('#rightPageBtn').prop("disabled",false);
+                $('#leftPageBtn').prop("disabled",false);
+            }
+        });
+    }
+
+    var leftBtn = $('#leftPageBtn');
+    leftBtn.click(function (ev) {
+        ev.preventDefault();
+
+        var tempCurrentPage =  0;
+        if(!isNaN(parseFloat($("#currentPageFieldID").val(), 10)))
+           tempCurrentPage = parseFloat($("#currentPageFieldID").val(), 10); 
+
+        tempCurrentPage = tempCurrentPage - 1;
+        if(tempCurrentPage < 0)
+            tempCurrentPage = tempCurrentPage + 1;
+
+        $("#currentPageFieldID").val(String(tempCurrentPage));
+
+        refreshTable(false);
+
+    });
+
+    var rightBtn = $('#rightPageBtn');
+    rightBtn.click(function (ev) {
+        ev.preventDefault();
+
+        var tempCurrentPage =  0;
+        if(!isNaN(parseFloat($("#currentPageFieldID").val(), 10)))
+           tempCurrentPage = parseFloat($("#currentPageFieldID").val(), 10); 
+        var tempMaxPage = 0;
+        if(!isNaN(parseFloat($("#maxPageFieldID").val(), 10)))
+           tempMaxPage = parseFloat($("#maxPageFieldID").val(), 10); 
+
+        tempCurrentPage = tempCurrentPage + 1;
+        if(tempCurrentPage > tempMaxPage)
+            tempCurrentPage = tempCurrentPage - 1;
+
+        $("#currentPageFieldID").val(String(tempCurrentPage));
+
+        refreshTable(false);
+
+    });
+
+    $('#myKeySelector').on('change',function(){
+        $("#refreshBtn").removeClass("shown").addClass("hidden");
+        $("#generateBtn").removeClass("hidden").addClass("show");
+
+        $("#filterColumnID").empty();
+        $("#sortColumnID").empty();
+
+        $("#maxPageFieldID").val("0")
+        $("#currentPageFieldID").val("0")
+              
+    });
+
+    var refreshBtn = $('#refreshBtn');
+    refreshBtn.click(function (ev) {
+        ev.preventDefault();
+
+        //$("#refreshBtn").removeClass("shown").addClass("hidden");
+        //$("#generateBtn").removeClass("hidden").addClass("show");
+
+        $("#currentPageFieldID").empty();
+        $("#currentPageFieldID").val('0');
+
+        refreshTable(false);
+
+    });
+
+    var generateBtn = $('#generateBtn');
+    generateBtn.click(function (ev) {
+    	ev.preventDefault();
+
+        $("#generateBtn").removeClass("shown").addClass("hidden");
+        $("#refreshBtn").removeClass("hidden").addClass("show");
+
+        $("#currentPageFieldID").empty();
+        $("#currentPageFieldID").val('0');
+
+        refreshTable(true);
+
+    });
+
+    function pageLimit(){
+
+        var inputVal = ($('#currentPageFieldID').val());
+        if (inputVal.match(/^[0-9]+$/) == null) {
+            $('#currentPageFieldID').val("");
+            //alert('Not a number');
+        }
+        else if((parseFloat(inputVal) < 0) || (parseFloat(inputVal) > parseFloat($('#maxPageFieldID').val()))){
+            $('#currentPageFieldID').val("");
+            //alert('Too high');
+        }
+        else{
+            refreshTable(false);
+        }
+    };
 	</script>
   </body>
 </html>
