@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  
+	<% include partials/head.ejs %>
+
+	<style>
+		.vertical-center {
+		text-align: center;
+		}
+		.btn-xl {
+			padding: 18px 28px;
+			font-size: 22px;
+			border-radius: 8px;
+		}
+		.listNoBullet {
+			list-style-type: none;
+		}
+
+		.backContainer{
+		
+			background: #ffffff url('../images/BackgroundBanners.png') no-repeat center center fixed;
+			-webkit-background-size: cover;
+			-moz-background-size: cover;
+			-o-background-size: cover;
+			background-size: cover;
+			
+		}
+		.hiddenRow{
+			display:none;
+		}
+
+        .goldMedal {
+            width: 10em;
+            height: 10em;
+            border-radius: 50%;
+            font-size: 2em;
+            color: #000;
+            line-height: 10em;
+            text-align: center;
+            background: #FFD700
+        }
+
+        .silverMedal {
+            width: 10em;
+            height: 10em;
+            border-radius: 50%;
+            font-size: 2em;
+            color: #000;
+            line-height: 10em;
+            text-align: center;
+            background: #CCC2C2
+        }
+
+        .bronzeMedal {
+            width: 10em;
+            height: 10em;
+            border-radius: 50%;
+            font-size: 2em;
+            color: #000;
+            line-height: 10em;
+            text-align: center;
+            background: #965A38
+        }
+
+        #mapdiv {
+            background: #eee;
+            width: 100%;
+            height: 100%;
+        }
+
+	</style>
+
+  </head>
+  <body style="padding-top: 70px;"  class="backContainer"> <!-- Put in CSS !-->
+  
+	<div class="container float-top">
+	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+		
+		<div class="navbar-header navbar-brand">
+			<a href="/">Towers</a>
+		</div>
+		
+		<ul class="nav navbar-nav">
+			<li><a href="Graph.html">Graphs</a></li>
+			<li><a href="Table.html">Tables</a></li>
+            <li class="active"><a href="Achievement.html">Achievements</a></li>
+		</ul>
+		
+		<p class="navbar-text pull-right" style="color: white;">Current Key: <%= currentKey %> </p> 
+        <p class="navbar-text pull-right" style="color: white;">Player: <%= currentPlayer %></p> 
+
+		
+	</nav>
+	</div>
+
+	
+	<div class="container">
+		<div class="jumbotron vertical-center">
+			<h1>Achievements</h1> 
+			<div class="row">
+				
+			</div>
+        </div>
+	</div>
+
+	<div class="container">
+		<div class="jumbotron vertical-center">
+            <h1>Most Claims</h1> 
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2 style="display: inline;">Your position: </h2>
+                    <h2 id="personalMostClaimsPos" style="display: inline;"></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">1. </h3>
+                    <h3 id="mostClaimsGoldName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">2. </h3>
+                    <h3 id="mostClaimsSilverName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">3. </h3>
+                    <h3 id="mostClaimsBronzeName" style="display: inline;"></h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h2 id="mostClaimsGoldValue" class="goldMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostClaimsSilverValue" class="silverMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostClaimsBronzeValue" class="bronzeMedal"></h2>
+                </div>
+		    </div>
+	   </div>
+    </div>
+
+    <div class="container">
+        <div class="jumbotron vertical-center">
+            <h1>Most Claimed Towers</h1> 
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2 style="display: inline;">Your position: </h2>
+                    <h2 id="personalMostClaimedTowersPos" style="display: inline;"></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">1. </h3>
+                    <h3 id="mostClaimedTowersGoldName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">2. </h3>
+                    <h3 id="mostClaimedTowersSilverName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">3. </h3>
+                    <h3 id="mostClaimedTowersBronzeName" style="display: inline;"></h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h2 id="mostClaimedTowersGoldValue" class="goldMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostClaimedTowersSilverValue" class="silverMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostClaimedTowersBronzeValue" class="bronzeMedal"></h2>
+                </div>
+            </div>
+       </div>
+    </div>
+
+    <div class="container">
+        <div class="jumbotron vertical-center">
+            <h1>Most Geld Collected</h1> 
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2 style="display: inline;">Your position: </h2>
+                    <h2 id="personalMostGeldCollectedPos" style="display: inline;"></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">1. </h3>
+                    <h3 id="mostGeldCollectedGoldName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">2. </h3>
+                    <h3 id="mostGeldCollectedSilverName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">3. </h3>
+                    <h3 id="mostGeldCollectedBronzeName" style="display: inline;"></h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h2 id="mostGeldCollectedGoldValue" class="goldMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostGeldCollectedSilverValue" class="silverMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostGeldCollectedBronzeValue" class="bronzeMedal"></h2>
+                </div>
+            </div>
+       </div>
+    </div>
+
+    <div class="container">
+        <div class="jumbotron vertical-center">
+            <h1>Most Bonus</h1> 
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2 style="display: inline;">Your position: </h2>
+                    <h2 id="personalMostBonusPos" style="display: inline;"></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">1. </h3>
+                    <h3 id="mostBonusGoldName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">2. </h3>
+                    <h3 id="mostBonusSilverName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">3. </h3>
+                    <h3 id="mostBonusBronzeName" style="display: inline;"></h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h2 id="mostBonusGoldValue" class="goldMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostBonusSilverValue" class="silverMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostBonusBronzeValue" class="bronzeMedal"></h2>
+                </div>
+            </div>
+       </div>
+    </div>
+
+    <div class="container">
+        <div class="jumbotron vertical-center">
+            <h1>Most built towers</h1> 
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2 style="display: inline;">Your position: </h2>
+                    <h2 id="personalMostBuiltTowersPos" style="display: inline;"></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2></h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">1. </h3>
+                    <h3 id="mostBuiltTowersGoldName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">2. </h3>
+                    <h3 id="mostBuiltTowersSilverName" style="display: inline;"></h3>
+                </div>
+                <div class="col-xs-4">
+                    <h3 style="display: inline; margin-left: -2em;">3. </h3>
+                    <h3 id="mostBuiltTowersBronzeName" style="display: inline;"></h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <h2 id="mostBuiltTowersGoldValue" class="goldMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostBuiltTowersSilverValue" class="silverMedal"></h2>
+                </div>
+                <div class="col-xs-4">
+                    <h2 id="mostBuiltTowersBronzeValue" class="bronzeMedal"></h2>
+                </div>
+            </div>
+       </div>
+    </div>
+
+	<div class="container">
+		<div class="jumbotron vertical-center">
+            <h1>Map</h1>
+            <div class="row">
+                <div class="col-xs-3">
+                    <div class="form-group">
+                        <label>Load Map Data</label>
+                        <button type="button" id="generateBtn" class="btn btn-primary btn-md form-control">Load <span id="mapLoadingGifID"></span></button>
+                    </div>
+                </div>
+                <div class="col-xs-3">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select class="selectpicker form-control" id="geoCategoryID">
+                            <optgroup label="Personal">
+                                <option value="0">First built tower in country</option>
+                                <option value="1">All built towers</option>
+                                <option value="2">Claimed towers</option>
+                            </optgroup>
+                            <optgroup label="Leaderboard - Towers">
+                                <option value="3">Most claims</option>
+                                <option value="4">Most geld collected</option>
+                                <option value="5">Highest geld bonus</option>
+                                <option value="6">Owned by most players</option>
+                            </optgroup>
+                            <optgroup label="Leaderboard - Region">
+                                <option value="7">Most claims</option>
+                                <option value="8">Most geld collected</option>
+                                <option value="9">Highest geld bonus</option>
+                                <option value="10">Owned by most players</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-2">
+                    <div class="form-group">
+                        <label>Region</label>
+                        <select class="selectpicker form-control" id="geoRegionID">
+                            <option value="city">City</option>
+                            <option value="level1_short">County</option>
+                            <option value="country_code">Country</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-2">
+                    <div class="form-group">
+                        <label>All Players</label>
+                        <input type="checkbox" id="playerCheckboxID" class="form-control" value="">
+                        <!--<input type="checkbox" class="form-control" id="playerCheckboxID">!-->
+                    </div>    
+                </div>
+                <div class="col-xs-2">
+                    <div class="form-group">
+                        <label>Top 3 Players</label>
+                        <input type="checkbox" id="top3CheckboxID" class="form-control" value="">
+                        <!--<input type="checkbox" class="form-control" id="playerCheckboxID">!-->
+                    </div>    
+                </div>
+            </div>
+            <div class="row">
+                <div id="mapdiv" style="width: 1000px; height: 400px;"></div>
+            </div>
+		</div>
+	</div>
+	
+    <% include partials/scripts.ejs %>
+  
+  	<script type="text/javascript">
+    var colourPalette = [
+        "rgba(0,255,0,1)",
+        "#CCC2C2",
+        "#965A38",
+        "rgba(255,0,0,1)",
+        "rgba(0,255,0,1)",
+        "rgba(0,0,255,1)",
+        "rgba(255,255,0,1)",
+        "rgba(255,165,0,1)",
+        "rgba(0,255,255,1)",
+        "rgba(255,0,255,1)",
+        "rgba(255,20,147,1)",
+        "rgba(139,69,19,1)"
+    ];
+
+    var mapChart = AmCharts.makeChart( "mapdiv", {
+
+        "type": "map",
+
+        "dataProvider": {
+            "map": "worldLow",
+            "getAreasFromMap": true,
+            "images": []
+        },
+
+        "areasSettings": {
+            "autoZoom": true,
+            "selectedColor": "#CC0000"
+        },
+
+        "legend": {
+            "backgroundColor": "#fff",
+            "backgroundAlpha": 0.7,
+            "align": "center",
+            "data": []
+        },
+
+        "smallMap": {}
+    });
+
+    $('#generateBtn').on('click', function (ev) {
+        
+        $("#mapLoadingGifID").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        
+        $.ajax({
+            type: 'post',
+            url: '/geographyKey',
+            data: {myGeoCategory: $('#geoCategoryID option:selected').val(),
+            myGeoRegion: $('#geoRegionID option:selected').val(),
+            myGeoPlayer: ($('#playerCheckboxID').prop('checked') ? '0' : '1'),
+            myGeoTop: ($('#top3CheckboxID').prop('checked') ? '1' : '0')},
+            success: function (data) {
+                
+                if(data != null){
+
+                    var parsedData = JSON.parse(data);
+
+                    if(!jQuery.isEmptyObject(parsedData)){
+
+                        mapChart.legend.data = [];
+                        mapChart.dataProvider.images = [];
+
+                        var paletteIndex = 0;
+                        for(var outerKey in parsedData){
+                            var outerObj = parsedData[outerKey];
+
+                            var tempColour = colourPalette[paletteIndex];
+                            paletteIndex += 1;
+                            mapChart.legend.data.push({
+                                "title": outerKey,
+                                "color": tempColour,
+                                "type": "circle"
+                            });
+
+                            for(var innerKey in outerObj){
+                                var innerObj = outerObj[innerKey];
+
+                                mapChart.dataProvider.images.push( {
+                                    "latitude": parseFloat(innerObj['latitude']),
+                                    "longitude": parseFloat(innerObj['longitude']),
+                                    "type": "circle",
+                                    "color": tempColour,
+                                    "title": innerObj['tower'],
+                                    "description": innerObj['description'],
+                                } );
+                                
+                            }
+                        }
+                        mapChart.validateData();
+                    }
+                    $("#mapLoadingGifID").empty();
+                }
+                else{
+                    $("#mapLoadingGifID").empty();
+                }
+            }
+        });
+        ev.preventDefault();
+    });
+
+    $('#geoCategoryID').on('change', function (ev) {
+
+        var optionVal = parseFloat($('#geoCategoryID option:selected').val());
+        if((optionVal >= 0) && (optionVal < 3)){
+            $('#playerCheckboxID').attr("disabled", true);
+            $('#top3CheckboxID').attr("disabled", true);
+            $('#geoRegionID').attr("disabled", true);
+            
+        }
+        else if((optionVal >= 3) && (optionVal < 7)){
+            $('#playerCheckboxID').attr("disabled", false);
+            $('#top3CheckboxID').attr("disabled", true);
+            $('#geoRegionID').attr("disabled", true);
+        }
+        else if((optionVal >= 7) && (optionVal < 11)){
+            $('#playerCheckboxID').attr("disabled", false);
+            $('#top3CheckboxID').attr("disabled", false);
+            $('#geoRegionID').attr("disabled", false);
+        }
+    });
+
+    function setElementData(elmID, value){
+        $(elmID).empty();
+        $(elmID).append(value);
+    }
+
+    function refreshAchievementData(){
+        $("#mostClaimsGoldName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostClaimsSilverName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostClaimsBronzeName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+
+        $("#mostClaimedTowersGoldName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostClaimedTowersSilverName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostClaimedTowersBronzeName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+
+        $("#mostGeldCollectedGoldName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostGeldCollectedSilverName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostGeldCollectedBronzeName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+
+        $("#mostBonusGoldName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostBonusSilverName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostBonusBronzeName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+
+        $("#mostBuiltTowersGoldName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostBuiltTowersSilverName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        $("#mostBuiltTowersBronzeName").append('<img src="http://www.bba-reman.com/images/fbloader.gif" />');
+        
+
+        $.getJSON({
+            url: '/achievementKey',
+            data: {},
+            success: function (data) {
+                if(data != null){
+                    var parsedData = JSON.parse(data);
+
+                    if(!jQuery.isEmptyObject(parsedData)){
+
+                        var parsedAchievementData = parsedData['achievementData'];
+                    
+                        //Claims
+                        setElementData("#mostClaimsGoldName", parsedAchievementData['Claims']['Player'][0]);
+                        setElementData("#mostClaimsGoldValue", parsedAchievementData['Claims']['Value'][0]);
+              
+                        setElementData("#mostClaimsSilverName",parsedAchievementData['Claims']['Player'][1]);
+                        setElementData("#mostClaimsSilverValue",parsedAchievementData['Claims']['Value'][1]);
+
+                        setElementData("#mostClaimsBronzeName",parsedAchievementData['Claims']['Player'][2]);
+                        setElementData("#mostClaimsBronzeValue",parsedAchievementData['Claims']['Value'][2]);
+
+                        setElementData("#personalMostClaimsPos",parsedAchievementData['Claims']['Value'][3] +
+                            " ( " + parsedAchievementData['Claims']['Value'][4] + " ) ");
+
+                        //Most Claimed Towers
+                        setElementData("#mostClaimedTowersGoldName",parsedAchievementData['ClaimedTowers']['Player'][0]);
+                        setElementData("#mostClaimedTowersGoldValue",parsedAchievementData['ClaimedTowers']['Value'][0]);
+              
+                        setElementData("#mostClaimedTowersSilverName",parsedAchievementData['ClaimedTowers']['Player'][1]);
+                        setElementData("#mostClaimedTowersSilverValue",parsedAchievementData['ClaimedTowers']['Value'][1]);
+
+                        setElementData("#mostClaimedTowersBronzeName",parsedAchievementData['ClaimedTowers']['Player'][2]);
+                        setElementData("#mostClaimedTowersBronzeValue",parsedAchievementData['ClaimedTowers']['Value'][2]);
+
+                        setElementData("#personalMostClaimedTowersPos",parsedAchievementData['ClaimedTowers']['Value'][3] + " ( " + parsedAchievementData['ClaimedTowers']['Value'][4] + " ) ");
+
+                        //Geld Collected
+                        setElementData("#mostGeldCollectedGoldName",parsedAchievementData['GeldCollected']['Player'][0]);
+                        setElementData("#mostGeldCollectedGoldValue",parsedAchievementData['GeldCollected']['Value'][0]);
+              
+                        setElementData("#mostGeldCollectedSilverName",parsedAchievementData['GeldCollected']['Player'][1]);
+                        setElementData("#mostGeldCollectedSilverValue",parsedAchievementData['GeldCollected']['Value'][1]);
+
+                        setElementData("#mostGeldCollectedBronzeName",parsedAchievementData['GeldCollected']['Player'][2]);
+                        setElementData("#mostGeldCollectedBronzeValue",parsedAchievementData['GeldCollected']['Value'][2]);
+
+                        setElementData("#personalMostGeldCollectedPos",parsedAchievementData['GeldCollected']['Value'][3] + " ( " + parsedAchievementData['GeldCollected']['Value'][4] + " ) ");
+
+
+                        //Bonus
+                        setElementData("#mostBonusGoldName",parsedAchievementData['Bonus']['Player'][0]);
+                        setElementData("#mostBonusGoldValue",parsedAchievementData['Bonus']['Value'][0]);
+              
+                        setElementData("#mostBonusSilverName",parsedAchievementData['Bonus']['Player'][1]);
+                        setElementData("#mostBonusSilverValue",parsedAchievementData['Bonus']['Value'][1]);
+
+                        setElementData("#mostBonusBronzeName",parsedAchievementData['Bonus']['Player'][2]);
+                        setElementData("#mostBonusBronzeValue",parsedAchievementData['Bonus']['Value'][2]);
+
+                        setElementData("#personalMostBonusPos",parsedAchievementData['Bonus']['Value'][3] + 
+                            " ( " + parsedAchievementData['Bonus']['Value'][4] + " ) ");
+
+                        //Built Towers
+                        setElementData("#mostBuiltTowersGoldName",parsedAchievementData['BuiltTowers']['Player'][0]);
+                        setElementData("#mostBuiltTowersGoldValue",parsedAchievementData['BuiltTowers']['Value'][0]);
+              
+                        setElementData("#mostBuiltTowersSilverName",parsedAchievementData['BuiltTowers']['Player'][1]);
+                        setElementData("#mostBuiltTowersSilverValue",parsedAchievementData['BuiltTowers']['Value'][1]);
+
+                        setElementData("#mostBuiltTowersBronzeName",parsedAchievementData['BuiltTowers']['Player'][2]);
+                        setElementData("#mostBuiltTowersBronzeValue",parsedAchievementData['BuiltTowers']['Value'][2]);
+
+                        setElementData("#personalMostBuiltTowersPos",parsedAchievementData['BuiltTowers']['Value'][3] + " ( " + parsedAchievementData['BuiltTowers']['Value'][4] + " ) ");
+
+                    }
+                }
+                else{
+                    $("#personalMostClaimsPos").empty();
+                    $("#personalMostClaimedTowersPos").empty();
+                    $("#personalMostGeldCollectedPos").empty();
+                    $("#personalMostBonusPos").empty();
+                    $("#personalMostBuiltTowersPos").empty();
+
+                    $("#mostClaimsGoldName").empty();
+                    $("#mostClaimsSilverName").empty();
+                    $("#mostClaimsBronzeName").empty();
+
+                    $("#mostClaimedTowersGoldName").empty();
+                    $("#mostClaimedTowersSilverName").empty();
+                    $("#mostClaimedTowersBronzeName").empty();
+
+                    $("#mostGeldCollectedGoldName").empty();
+                    $("#mostGeldCollectedSilverName").empty();
+                    $("#mostGeldCollectedBronzeName").empty();
+
+                    $("#mostBonusGoldName").empty();
+                    $("#mostBonusSilverName").empty();
+                    $("#mostBonusBronzeName").empty();
+
+                    $("#mostBuiltTowersGoldName").empty();
+                    $("#mostBuiltTowersSilverName").empty();
+                    $("#mostBuiltTowersBronzeName").empty();
+                }
+            }
+        });
+    };
+
+    jQuery(window).load(function (ev) {
+        $('#playerCheckboxID').attr("disabled", true);
+        $('#top3CheckboxID').attr("disabled", true);
+        $('#geoRegionID').attr("disabled", true);
+        refreshAchievementData();
+    });
+  	
+    var form = $('#myKey');
+    form.submit(function (ev) {
+        ev.preventDefault();
+        $("#currKey").empty();
+        $("#currKey").append($('#keyTextField').val());
+
+        $.ajax({
+            type: form.attr('method'),
+            url: form.attr('action'),
+            data: {
+                myApiKey: $('#keyTextField').val()
+            },
+            success: function (data) {
+                
+                if(data != null){
+                    var parsedData = JSON.parse(data);
+                    if(parsedData["playerId"]){
+                        refreshAchievementData();
+                    }
+                }
+               
+            }
+        });
+    });
+
+
+  	$(document).ready(function(){ 
+        
+        
+    });
+
+    </script>
+
+  </body>
+</html>

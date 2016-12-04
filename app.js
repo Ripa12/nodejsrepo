@@ -33,13 +33,18 @@ app.get('/Table.html', routes.tablePage);
 // Graph page
 app.get('/Graph.html', routes.graphPage);
 
-// get key
-app.post('/newMoons', routes.getNewMoons);
+//Achievement Page
+app.get('/Achievement.html', routes.achievementPage);
 
-// search-bar
-app.post('/setKey', routes.setKey);
+// JSON-objects
+app.get('/newMoons', routes.getNewMoons);
+app.get('/achievementKey', routes.getAchievements);
+app.post('/geographyKey', routes.updateMap);
 app.post('/graphKey', routes.updateGraph);
 app.post('/tableKey', routes.updateTable);
+
+// Key
+app.post('/setKey', routes.setKey);
 
 // 404 or 500
 app.get('*', routes.notFound);

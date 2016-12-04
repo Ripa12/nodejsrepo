@@ -1,11 +1,19 @@
+////
 //Require
+////
 var http = require('https');
 var request = require('request');
 
+////
 //Global
+////
+
 var keyValue = "Key Value"; //9zEUDsWNqr0jCQ0MbIad8QgWH0giPxF4
 
+////
 //Enum
+////
+
 const GraphValue = {
   NumberOfClaimedTowers: '0',
   NumberOfClaimsOnOtherPlayersTowers: '9',
@@ -38,45 +46,82 @@ const TimeFrame = {
   PerHourInWeek: '4',
 };
 
-//Header
+////
+// Pages
+////
 
-
-// main-page
 exports.main = function(req, res){
-	res.render('main', {keyValue : keyValue});
+  var currentKey = req.session.currentKey;
+  var currentPlayer = req.session.currentPlayer;
+  var currentPlayerID = req.session.currentPlayerID;
+
+	res.render('main', {currentKey : currentKey, currentPlayer : currentPlayer});
 };
 
-// table-page
 exports.tablePage = function(req, res){
   var currentKey = req.session.currentKey;
   var currentPlayer = req.session.currentPlayer;
-
-  res.render('tables', {currentKey : currentKey});
+  var currentPlayerID = req.session.currentPlayerID;
+  if(typeof currentPlayerID !== 'undefined'){
+    res.render('tables', {currentKey : currentKey, currentPlayer : currentPlayer});
+  }
+  else{
+    res.redirect('/');
+  }
 };
 
-// graph-page
 exports.graphPage = function(req, res){
   var currentKey = req.session.currentKey;
   var currentPlayer = req.session.currentPlayer;
-
-  res.render('graphs', {currentKey : currentKey});
+  var currentPlayerID = req.session.currentPlayerID;
+  if(typeof currentPlayerID !== 'undefined'){
+    res.render('graphs', {currentKey : currentKey, currentPlayer : currentPlayer});
+  }
+  else{
+    res.redirect('/');
+  }
 };
 
+exports.achievementPage = function(req, res){
+  var currentKey = req.session.currentKey;
+  var currentPlayer = req.session.currentPlayer;
+  var currentPlayerID = req.session.currentPlayerID;
+  if(typeof currentPlayerID !== 'undefined'){
+    res.render('achievements', {currentKey : currentKey, currentPlayer : currentPlayer});
+  }
+  else{
+    res.redirect('/');
+  }
+};
 
-//Key functions
+exports.notFound = function(req, res){
+
+  res.send('404');
+};
+
+////
+// Get Functions
+////
+
 exports.getNewMoons = function(req, res){
   if((typeof req.session.currentKey !== 'undefined') && (typeof req.session.currentPlayer !== 'undefined')){
     var currentKey = req.session.currentKey;
     var currentPlayer = req.session.currentPlayer;
     getJSON(req.session.currentKey, '8', function(moonData){
-      returnData = {'moonData': moonData, 'keyValue': currentKey, 'playerAlias': currentPlayer};
-      res.json(JSON.stringify(returnData));
-      //res.json(moonData);
+      if(moonData != null){
+        returnData = {'moonData': moonData, 'keyValue': currentKey, 'playerAlias': currentPlayer};
+        res.json(JSON.stringify(returnData));
+      }
+      else{
+        res.json(null);
+      }
     });
+  }
+  else{
+    res.json(null);
   }
 };
 
-//Key Helper Function
 function getJSON(currKey, reqSelectedItem, callback){
 
   var reqPath = 'https://play.2good.com/api/v1/public/claims';
@@ -106,12 +151,11 @@ function getJSON(currKey, reqSelectedItem, callback){
         reqPath = 'https://play.2good.com/assets/new-moons.min.json';
       break;
   }
-  //console.log(reqPath);
 
   request.get({
     url: reqPath, 
-    qs: {apiKey: currKey, start: '2016-01-01',
-    end: '2017-01-01'},
+    qs: {apiKey: currKey, start: '2014-01-01',
+    end: '2030-01-01'},
     method: 'GET',
     headers: { accept: 'application/json' } }, 
 
@@ -122,7 +166,7 @@ function getJSON(currKey, reqSelectedItem, callback){
       } 
       else {
         console.log('Status: ' + response.statusCode);
-        //console.log(body);
+       
         if(response.statusCode != '200'){
           callback(null);
         }
@@ -131,13 +175,53 @@ function getJSON(currKey, reqSelectedItem, callback){
         }
       }
     });
-
-  //return null;
 };
 
-function filterJSON(parsedData, filterValue, keyIndex, callback){
+////
+// Set Functions
+////
 
-  //var playerID = parsedPlayerData["playerId"];
+exports.setKey = function(req, res){
+  var reqApiKey = req.body.myApiKey;
+
+  if(typeof reqApiKey !== 'undefined'){
+    req.session.currentKey = reqApiKey;
+
+    console.log(req.session.currentKey);
+    
+    getJSON(req.session.currentKey, '1', function(playerData){
+      if(playerData != null){
+        if(JSON.parse(playerData).hasOwnProperty('alias')){
+          req.session.currentPlayer = JSON.parse(playerData)["alias"];
+          if(req.session.currentPlayer === null){
+            req.session.currentPlayer = "Nameless";
+          }
+          req.session.currentPlayerID = JSON.parse(playerData)["playerId"];
+
+          console.log("player: " + req.session.currentPlayer);
+          console.log("playerId: " + req.session.currentPlayerID);
+        }
+      }
+      else{
+        req.session.currentKey = undefined;
+        req.session.currentPlayer = undefined;
+        req.session.currentPlayerID = undefined;
+      }
+      res.json(playerData);
+    });
+  }
+  else{
+    //res.json(null);
+    res.json(null);
+  }
+  //res.redirect('/');
+};
+
+////
+// Helper Functions
+////
+
+function filterJSON(parsedData, filterValue, keyIndex, callback){
 
   for (var outKey in parsedData) {
     var outObject = parsedData[outKey];
@@ -163,14 +247,561 @@ function filterJSONOnEqual(parsedData, filterValue, keyIndex, callback){
   callback(parsedData);
 };
 
-function getLeaderboard(resultObject, parsedStatData, objectIndex, selectRange, callback){
+////
+// Achievements
+////
+
+function processAchievementData(achievementData, towerBuildsData, playerID, callback){
+
+  var parsedAchievementData = JSON.parse(achievementData);
+  var parsedTowerBuildsData = JSON.parse(towerBuildsData);
+
+  var resultObject = {'Claims': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'claim_count'}, 
+    'ClaimedTowers': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'tower_count'}, 
+    'GeldCollected': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'geld_collected'}, 
+    'Bonus': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'geld_bonus'}};
+
+
+
+  for(var outerKey in resultObject){
+      var outerObj = resultObject[outerKey];
+
+    parsedAchievementData.sort(function(b,a) {
+        var aVal = a[outerObj['Target']];
+        var bVal = b[outerObj['Target']];
+        if((/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/.test(aVal)) && 
+            (/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/.test(bVal))){
+          aVal = parseFloat(aVal);
+          bVal = parseFloat(bVal);
+        }
+        return (aVal > bVal) ? 1 : ((bVal > aVal) ? -1 : 0);
+    });
+
+    for(var innerKey in parsedAchievementData){
+      var innerObj = parsedAchievementData[innerKey];
+
+      var floatVal = parseFloat(innerObj[outerObj['Target']]);
+
+      if(innerObj['player_id'] === playerID){
+        resultObject[outerKey]['Value'][3] = (parseFloat(innerKey) + 1);
+        resultObject[outerKey]['Value'][4] = floatVal.toFixed(1);
+        resultObject[outerKey]['Player'][3] = innerObj['player_alias'];
+      }
+
+      if(floatVal > outerObj['Value'][0]){
+        outerObj['Value'][0] = floatVal.toFixed(1);
+        outerObj['Player'][0] = innerObj['player_alias'];
+      }
+      else if(floatVal > outerObj['Value'][1]){
+        outerObj['Value'][1] = floatVal.toFixed(1);
+        outerObj['Player'][1] = innerObj['player_alias'];
+      }
+      else if(floatVal > outerObj['Value'][2]){
+        outerObj['Value'][2] = floatVal.toFixed(1);
+        outerObj['Player'][2] = innerObj['player_alias'];
+      }
+    }
+  }
+
+  resultObject['BuiltTowers'] = {'Player': [], 'Value': [-1, -1, -1, 1], 'Target': 'count'};
+
+  for(var outerKey in parsedTowerBuildsData){
+    var outerObj = parsedTowerBuildsData[outerKey];
+
+    var floatVal = parseFloat(outerObj['count']);
+
+    if(outerObj['player_id'] === playerID){
+      resultObject['BuiltTowers']['Value'][3] = (parseFloat(outerKey) + 1);
+      resultObject['BuiltTowers']['Value'][4] = floatVal.toFixed(1);
+      resultObject['BuiltTowers']['Player'][3] = outerObj['player_alias'];
+    }
+      
+    if(floatVal > resultObject['BuiltTowers']['Value'][0]){
+      resultObject['BuiltTowers']['Value'][0] = floatVal.toFixed(1);
+      resultObject['BuiltTowers']['Player'][0] = outerObj['player_alias'];
+    }
+    else if(floatVal > resultObject['BuiltTowers']['Value'][1]){
+      resultObject['BuiltTowers']['Value'][1] = floatVal.toFixed(1);
+      resultObject['BuiltTowers']['Player'][1] = outerObj['player_alias'];
+    }
+    else if(floatVal > resultObject['BuiltTowers']['Value'][2]){
+      resultObject['BuiltTowers']['Value'][2] = floatVal.toFixed(1);
+      resultObject['BuiltTowers']['Player'][2] = outerObj['player_alias'];
+    }
+  }
+
+  callback(resultObject);
+};
+
+function processTowerMap(geoData, objectData, sortOn, playerID, callback){
+  var parsedGeoObject = JSON.parse(geoData);
+  var parsedObject = JSON.parse(objectData);
+
+  var tempResultObject = {'Gold': [0, 0, -1], 'Silver': [0, 0, -1], 'Bronze': [0, 0, -1]};
+
+  var innerKey = 0;
+
+  for (var outerKey = 0; (outerKey < parsedObject.length) && (innerKey < parsedGeoObject.length); outerKey++) {
+    var outerObj = parsedObject[outerKey];
+    var innerObj = parsedGeoObject[innerKey]; // Remember to check if not empty first!!!
+
+    while(innerObj['tower_id'] !== outerObj['tower_id']){
+      innerKey += 1;
+      innerObj = parsedGeoObject[innerKey]; 
+    }
+
+    var floatVal = parseFloat(outerObj[sortOn]);
+
+    if((innerObj['player_id'] === playerID) || (playerID === '-1')){
+
+      if(floatVal > tempResultObject['Gold'][2]){
+
+        tempResultObject['Bronze'][2] = tempResultObject['Silver'][2];
+        tempResultObject['Bronze'][1] = tempResultObject['Silver'][1];
+        tempResultObject['Bronze'][0] = tempResultObject['Silver'][0];
+
+        tempResultObject['Silver'][2] = tempResultObject['Gold'][2];
+        tempResultObject['Silver'][1] = tempResultObject['Gold'][1];
+        tempResultObject['Silver'][0] = tempResultObject['Gold'][0];
+
+        tempResultObject['Gold'][2] = floatVal;
+        tempResultObject['Gold'][1] = innerKey;
+        tempResultObject['Gold'][0] = outerKey;
+
+
+
+      }
+      else if(floatVal > tempResultObject['Silver'][2]){
+
+        tempResultObject['Bronze'][2] = tempResultObject['Silver'][2];
+        tempResultObject['Bronze'][1] = tempResultObject['Silver'][1];
+        tempResultObject['Bronze'][0] = tempResultObject['Silver'][0];
+
+        tempResultObject['Silver'][2] = floatVal;
+        tempResultObject['Silver'][1] = innerKey;
+        tempResultObject['Silver'][0] = outerKey;
+      }
+      else if(floatVal > tempResultObject['Bronze'][2]){
+        
+        tempResultObject['Bronze'][2] = floatVal;
+        tempResultObject['Bronze'][1] = innerKey;
+        tempResultObject['Bronze'][0] = outerKey;
+      }
+    }
+  }
+
+
+  var resultObject = {};
+
+  var tempGeoObject = parsedGeoObject[tempResultObject['Gold'][1]];
+  var towerName = (tempGeoObject['tower_name'] ? tempGeoObject['tower_name'] : tempGeoObject['tower_id']);
+
+  resultObject['1. ' + towerName] = 
+  [{'latitude': tempGeoObject['latitude'], 
+        'longitude': tempGeoObject['longitude'], 'tower': towerName,
+        'description': ("<b>Created by:</b> " + tempGeoObject['player_alias'] +
+        "<br><b>Created on:</b> " + tempGeoObject['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + tempGeoObject['formatted_address'] +
+        "<br><b>"+ sortOn.replace(/\_/g, ' ') +":</b> " + tempResultObject['Gold'][2])}];
+
+
+  tempGeoObject = parsedGeoObject[tempResultObject['Silver'][1]];
+  towerName = (tempGeoObject['tower_name'] ? tempGeoObject['tower_name'] : tempGeoObject['tower_id']);   
+  resultObject['2. ' + towerName] = 
+  [{'latitude': tempGeoObject['latitude'], 
+        'longitude': tempGeoObject['longitude'], 'tower': towerName,
+        'description': ("<b>Created by:</b> " + tempGeoObject['player_alias'] +
+        "<br><b>Created on:</b> " + tempGeoObject['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + tempGeoObject['formatted_address'] +
+        "<br><b>"+ sortOn.replace(/\_/g, ' ') +":</b> " + tempResultObject['Silver'][2])}];
+
+
+  tempGeoObject = parsedGeoObject[tempResultObject['Bronze'][1]];
+  towerName = (tempGeoObject['tower_name'] ? tempGeoObject['tower_name'] : tempGeoObject['tower_id']); 
+  resultObject['3. ' + towerName] = 
+  [{'latitude': tempGeoObject['latitude'], 
+        'longitude': tempGeoObject['longitude'], 'tower': towerName,
+        'description': ("<b>Created by:</b> " + tempGeoObject['player_alias'] +
+        "<br><b>Created on:</b> " + tempGeoObject['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + tempGeoObject['formatted_address'] +
+        "<br><b>"+ sortOn.replace(/\_/g, ' ') +":</b> " + tempResultObject['Bronze'][2])}];
+  
+  callback(resultObject);
+}
+
+function processTowerMapByRegion(geoData, objectData, sortOn, region, top3, playerID, callback){
+  var parsedGeoObject = JSON.parse(geoData);
+  var parsedObject = JSON.parse(objectData);
+
+  var tempResultObject = {};
+
+  var innerKey = 0;
+
+  for (var outerKey = 0; (outerKey < parsedObject.length) && (innerKey < parsedGeoObject.length); outerKey++) {
+    var outerObj = parsedObject[outerKey];
+    var innerObj = parsedGeoObject[innerKey]; // Remember to check if not empty first!!!
+
+    while(innerObj['tower_id'] !== outerObj['tower_id']){
+      innerKey += 1;
+      innerObj = parsedGeoObject[innerKey]; 
+    }
+
+    if((innerObj[region] !== null) && ((playerID === innerObj['player_id']) || (playerID === '-1'))){
+    var floatVal = parseFloat(outerObj[sortOn]);
+
+    if(!tempResultObject.hasOwnProperty(innerObj[region])){
+      tempResultObject[innerObj[region]] = {'Gold': [0, 0, -1, 0, 0], 'Silver': [0, 0, -1, 0, 0], 'Bronze': [0, 0, -1, 0, 0]};
+    }
+    tempResultObject[innerObj[region]]['Gold'][3] += floatVal;
+    tempResultObject[innerObj[region]]['Gold'][4] += 1;
+    //if((innerObj['player_id'] === playerID) || (playerID === '-1')){
+
+      if(floatVal > tempResultObject[innerObj[region]]['Gold'][2]){
+
+        tempResultObject[innerObj[region]]['Gold'][2] = floatVal;
+        tempResultObject[innerObj[region]]['Gold'][1] = innerKey;
+        tempResultObject[innerObj[region]]['Gold'][0] = outerKey;
+      }
+    }
+  }
+
+
+  var resultObject = {};
+  var tempGeoObjIndex = 0;
+  var towerName = '';
+
+  // Remember to check if 3 elemets exist
+  if(top3 === false){
+    resultObject['Region'] = [];
+    for(var outerRegionKey in tempResultObject){
+      var outerRegionObj = tempResultObject[outerRegionKey];
+
+      tempGeoObjIndex = parsedGeoObject[outerRegionObj['Gold'][1]];
+      towerName = (tempGeoObjIndex['tower_name'] ? tempGeoObjIndex['tower_name'] : tempGeoObjIndex['tower_id']);
+      resultObject['Region'].push({'latitude': tempGeoObjIndex['latitude'], 
+        'longitude': tempGeoObjIndex['longitude'], 'tower': tempGeoObjIndex[region],
+        'description': ("<ins><b>Best Tower</b></ins>" +
+        "<br><b>Name:</b> " + towerName + 
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + outerRegionObj['Gold'][2] +
+        "<br><b>Created by:</b> " + tempGeoObjIndex['player_alias'] +
+        "<br><b>Created on:</b> " + tempGeoObjIndex['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + tempGeoObjIndex['formatted_address'] +
+        "<br><ins><b>Whole Region</b></ins>" +
+        "<br><b>Number of Towers:</b> " + outerRegionObj['Gold'][4] +
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + outerRegionObj['Gold'][3])});
+    }
+  }
+  else{
+    var topRegionObj = {};
+    topRegionObj['Gold'] = [0, -1, 0, 0];
+    topRegionObj['Silver'] = [0, -1, 0, 0];
+    topRegionObj['Bronze'] = [0, -1, 0, 0];
+    
+    for(var outerRegionKey in tempResultObject){
+      var outerRegionObj = tempResultObject[outerRegionKey];
+
+      if(outerRegionObj['Gold'][3] > topRegionObj['Gold'][1]){
+          
+        topRegionObj['Bronze'][3] = topRegionObj['Silver'][3];  
+        topRegionObj['Bronze'][2] = topRegionObj['Silver'][2];
+        topRegionObj['Bronze'][1] = topRegionObj['Silver'][1];
+        topRegionObj['Bronze'][0] = topRegionObj['Silver'][0];
+
+        topRegionObj['Silver'][3] = topRegionObj['Gold'][3];
+        topRegionObj['Silver'][2] = topRegionObj['Gold'][2];
+        topRegionObj['Silver'][1] = topRegionObj['Gold'][1];
+        topRegionObj['Silver'][0] = topRegionObj['Gold'][0];
+
+        topRegionObj['Gold'][3] = outerRegionObj['Gold'][2];
+        topRegionObj['Gold'][2] = outerRegionObj['Gold'][4];
+        topRegionObj['Gold'][1] = outerRegionObj['Gold'][3];
+        topRegionObj['Gold'][0] = outerRegionObj['Gold'][1];
+      }
+      else if(outerRegionObj['Gold'][3] > topRegionObj['Silver'][1]){
+        topRegionObj['Bronze'][3] = topRegionObj['Silver'][3];
+        topRegionObj['Bronze'][2] = topRegionObj['Silver'][2];
+        topRegionObj['Bronze'][1] = topRegionObj['Silver'][1];
+        topRegionObj['Bronze'][0] = topRegionObj['Silver'][0];
+
+        topRegionObj['Silver'][3] = outerRegionObj['Gold'][2];
+        topRegionObj['Silver'][2] = outerRegionObj['Gold'][4];
+        topRegionObj['Silver'][1] = outerRegionObj['Gold'][3];
+        topRegionObj['Silver'][0] = outerRegionObj['Gold'][1];
+      }
+      else if(outerRegionObj['Gold'][3] > topRegionObj['Bronze'][1]){
+        topRegionObj['Bronze'][3] = outerRegionObj['Gold'][2];
+        topRegionObj['Bronze'][2] = outerRegionObj['Gold'][4];
+        topRegionObj['Bronze'][1] = outerRegionObj['Gold'][3];
+        topRegionObj['Bronze'][0] = outerRegionObj['Gold'][1];
+      }
+    }
+    tempGeoObjIndex = parsedGeoObject[topRegionObj['Gold'][0]];
+    towerName = (tempGeoObjIndex['tower_name'] ? tempGeoObjIndex['tower_name'] : tempGeoObjIndex['tower_id']);
+    resultObject['1. ' + tempGeoObjIndex[region]] = [{'latitude': tempGeoObjIndex['latitude'], 
+        'longitude': tempGeoObjIndex['longitude'], 'tower': tempGeoObjIndex[region],
+        'description': ("<ins><b>Best Tower</b></ins>" +
+        "<br><b>Name:</b> " + towerName + 
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + topRegionObj['Gold'][3] +
+        "<br><b>Created by:</b> " + tempGeoObjIndex['player_alias'] +
+        "<br><b>Created on:</b> " + tempGeoObjIndex['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + tempGeoObjIndex['formatted_address'] +
+        "<br><ins><b>Whole Region</b></ins>" +
+        "<br><b>Number of Towers:</b> " + topRegionObj['Gold'][2] +
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + topRegionObj['Gold'][1])}];
+
+    tempGeoObjIndex = parsedGeoObject[topRegionObj['Silver'][0]];
+    towerName = (tempGeoObjIndex['tower_name'] ? tempGeoObjIndex['tower_name'] : tempGeoObjIndex['tower_id']);
+    resultObject['2. ' + tempGeoObjIndex[region]] = [{'latitude': tempGeoObjIndex['latitude'], 
+        'longitude': tempGeoObjIndex['longitude'], 'tower': tempGeoObjIndex[region],
+        'description': ("<ins><b>Best Tower</b></ins>" +
+        "<br><b>Name:</b> " + towerName + 
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + topRegionObj['Silver'][3] +
+        "<br><b>Created by:</b> " + tempGeoObjIndex['player_alias'] +
+        "<br><b>Created on:</b> " + tempGeoObjIndex['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + tempGeoObjIndex['formatted_address'] +
+        "<br><ins><b>Whole Region</b></ins>" +
+        "<br><b>Number of Towers:</b> " + topRegionObj['Silver'][2] +
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + topRegionObj['Silver'][1])}];
+
+    tempGeoObjIndex = parsedGeoObject[topRegionObj['Bronze'][0]];
+    towerName = (tempGeoObjIndex['tower_name'] ? tempGeoObjIndex['tower_name'] : tempGeoObjIndex['tower_id']);
+    resultObject['3. ' + tempGeoObjIndex[region]] = [{'latitude': tempGeoObjIndex['latitude'], 
+        'longitude': tempGeoObjIndex['longitude'], 'tower': tempGeoObjIndex[region],
+        'description': ("<ins><b>Best Tower</b></ins>" +
+        "<br><b>Name:</b> " + towerName + 
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + topRegionObj['Bronze'][3] +
+        "<br><b>Created by:</b> " + tempGeoObjIndex['player_alias'] +
+        "<br><b>Created on:</b> " + tempGeoObjIndex['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + tempGeoObjIndex['formatted_address'] +
+        "<br><ins><b>Whole Region</b></ins>" +
+        "<br><b>Number of Towers:</b> " + topRegionObj['Bronze'][2] +
+        "<br><b>" + sortOn.replace(/\_/g, ' ') +":</b> " + topRegionObj['Bronze'][1])}];
+  }
+
+  callback(resultObject);
+};
+
+function processPlayerMap(geoData, playerData, filterPlayer, targetData, callback){
+  var parsedGeoObject = JSON.parse(geoData);
+  var parsedClaimsObject = JSON.parse(playerData);
+
+  var tempClaimObject = {};
+  var resObject = {};
+
+
+  for(var outerKey in parsedClaimsObject){
+    var outerObj = parsedClaimsObject[outerKey];
+
+    if(!tempClaimObject.hasOwnProperty(outerObj[targetData])){
+        tempClaimObject[outerObj[targetData]] = 0;
+    } 
+  }
+
+  resObject[filterPlayer] = [];
+
+  for(var outerKey in parsedGeoObject){
+    var outerObj = parsedGeoObject[outerKey];
+    
+    if(tempClaimObject.hasOwnProperty(outerKey)){
+        var towerName = outerObj['tower_id'];
+        if(outerObj['tower_name']){
+          towerName = outerObj['tower_name'];
+        }
+        resObject[filterPlayer].push({'latitude': outerObj['latitude'], 
+        'longitude': outerObj['longitude'], 'tower': towerName,
+        'description': ("<b>Created by:</b> " + outerObj['player_alias'] +
+        "<br><b>Created on:</b> " + outerObj['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + outerObj['formatted_address'])});
+    } 
+  }
+
+  callback(resObject);
+};
+
+function processLeaderboardMap(geoData, filterPlayer, callback){
+
+  var parsedObject = JSON.parse(geoData);
+
+  var resObject = {};
+  var sortable = [];
+  var counter = 0;
+
+  for(var outerKey in parsedObject){
+    var outerObj = parsedObject[outerKey];
+
+    if(outerObj['player_id'] === filterPlayer){
+      if(!resObject.hasOwnProperty(outerObj['player_alias'])){
+        resObject[outerObj['player_alias']] = [];
+      } 
+      var towerTitle = outerObj['tower_id'];
+      if(outerObj['tower_name']){ towerTitle = outerObj['tower_name']}
+      resObject[outerObj['player_alias']].push({'latitude': outerObj['latitude'], 
+        'longitude': outerObj['longitude'], 'tower': towerTitle,
+        'description': ("<b>Created by:</b> " + outerObj['player_alias'] +
+        "<br><b>Created on:</b> " + outerObj['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + outerObj['formatted_address'])});
+    }
+    else{
+      if(!resObject.hasOwnProperty('Other')){
+        resObject['Other'] = [];
+      }
+       
+      var towerTitle = outerObj['tower_id'];
+      if(outerObj['tower_name']){ towerTitle = outerObj['tower_name']}
+      resObject['Other'].push({'latitude': outerObj['latitude'], 
+        'longitude': outerObj['longitude'], 'tower': towerTitle,
+        'description': ("<b>Created by:</b> " + outerObj['player_alias'] +
+        "<br><b>Created on:</b> " + outerObj['created_on'].substring(0, 10).replace(/\-/g, '/') +
+        "<br><b>Adress:</b> " + outerObj['formatted_address'])});
+
+    }
+
+  }
+ 
+  callback(resObject);
+};
+
+exports.updateMap = function(req, res){
+  var geoCategory = req.body.myGeoCategory;
+  var geoRegion = req.body.myGeoRegion;
+  var geoPlayer = req.body.myGeoPlayer;
+  var geoTop = (req.body.myGeoTop === '0' ? false : true);
+
+  if((typeof req.session.currentKey !== 'undefined') && (typeof req.session.currentPlayer !== 'undefined')
+    && (typeof req.session.currentPlayerID !== 'undefined')){
+    
+    var selectedJSON = '6';
+    switch(geoCategory){
+      case '0':
+        selectedJSON = '5';
+      break;
+    }
+
+    var pID = req.session.currentPlayerID;
+    if(geoPlayer === '0'){
+      pID = '-1';
+    }
+
+    getJSON(req.session.currentKey, selectedJSON, function(mapData){
+      if(mapData != null){
+        if(geoCategory === '2'){
+          getJSON(req.session.currentKey, '0', function(playerData){
+            processPlayerMap(mapData, playerData, req.session.currentPlayer, 'tower_id', function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '3'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMap(mapData, towerData, 'claim_count', pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '4'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMap(mapData, towerData, 'total_geld_collected', pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '5'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMap(mapData, towerData, 'total_geld_bonus', pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '6'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMap(mapData, towerData, 'player_count', pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '7'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMapByRegion(mapData, towerData, 'claim_count', geoRegion, geoTop, pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '8'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMapByRegion(mapData, towerData, 'total_geld_collected', geoRegion, geoTop,pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '9'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMapByRegion(mapData, towerData, 'total_geld_bonus', geoRegion, geoTop,pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else if(geoCategory === '10'){
+          getJSON(req.session.currentKey, '7', function(towerData){
+            processTowerMapByRegion(mapData, towerData, 'player_count', geoRegion, geoTop,pID, function(resultData){
+              res.json(JSON.stringify(resultData));
+            });
+          });
+        }
+        else{
+          processLeaderboardMap(mapData, req.session.currentPlayerID, function(resultData){
+            res.json(JSON.stringify(resultData));
+          }); 
+        }
+      }
+      else{
+        res.send(null);
+      }
+    });
+  }
+  else{
+    res.send(null);
+  }
+};
+
+exports.getAchievements = function(req, res){
+  if((typeof req.session.currentKey !== 'undefined') && (typeof req.session.currentPlayer !== 'undefined')
+    && (typeof req.session.currentPlayerID !== 'undefined')){
+    var currentKey = req.session.currentKey;
+    var currentPlayer = req.session.currentPlayer;
+    getJSON(req.session.currentKey, '2', function(achievementData){
+      if(achievementData != null){
+        getJSON(req.session.currentKey, '3', function(towerBuildsData){
+          processAchievementData(achievementData, towerBuildsData, req.session.currentPlayerID, function(processedAchievementData){
+            var returnData = {'achievementData': processedAchievementData, 'keyValue': currentKey, 'playerAlias': currentPlayer};
+            res.json(JSON.stringify(returnData));
+          });
+        });
+      }
+      else{
+        res.json(null);
+      }
+    });
+  } 
+  else{
+    res.json(null);
+  }
+};
+
+////
+// Graph Functions
+////
+
+function processLeaderboard(resultObject, parsedStatData, objectIndex, selectRange, playerID, callback){
 
   var sortable = [];
 
   for (var outClaimsKey in parsedStatData) {
     var outClaimsObject = parsedStatData[outClaimsKey];
-
-    sortable.push([outClaimsObject['player_alias'], parseInt(outClaimsObject[objectIndex], 10)]);
+    var isPlayer = false;
+    if(outClaimsObject['player_id'] === playerID){
+      isPlayer = true;
+    }
+    sortable.push([outClaimsObject['player_alias'], parseInt(outClaimsObject[objectIndex], 10), isPlayer]);
   }
 
   sortable.sort(
@@ -183,189 +814,69 @@ function getLeaderboard(resultObject, parsedStatData, objectIndex, selectRange, 
 
   if(sortable.length >= selectRange){
     for (var m = 0; m < selectRange; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], [sortable[m][1]]]);
+      resultObject['valueAxle'].push([sortable[m][0], [sortable[m][1]], sortable[m][2]]);
     };
   }
   else{
     for (var m = 0; m < sortable.length; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], [sortable[m][1]]]);
+      resultObject['valueAxle'].push([sortable[m][0], [sortable[m][1]], sortable[m][2]]);
     };
   }
 
   callback(resultObject);
 }
 
-function calcMultipleAverageData(resultObject, parsedStatData, objectIndex, keyIndex, avgIncIndex, selectRange, callback){
+function processGraphPerDayInMonth(resultObject, parsedStatData, graphParams, callback){
 
   var statObject = {};
   var sortable = [];
 
   var sortIndex = 0;
-  var counter = 0;
+  var outerObjKey = 0;
+  var timeCounter = 0;
   var avg = 0;
 
-  var firstNewMoonDay;
-  var lastNewMoonDay;
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
+  while((resultObject['timeAxle'].length > (timeCounter + 1)) && (outerObjKey < parsedStatData.length)){
+    var outerObj = parsedStatData[outerObjKey];
 
-    if(!statObject.hasOwnProperty(outClaimsObject[objectIndex])){
-      statObject[outClaimsObject[objectIndex]] = [[], 0];
-      statObject[outClaimsObject[objectIndex]][1] = sortIndex;
-      sortIndex++;
-      sortable.push([outClaimsObject[objectIndex], 0])
-      for (var k = 0; k < resultObject['timeAxle'].length; k++) {
-        statObject[outClaimsObject[objectIndex]][0].push(0);
-      };
-    }
-    if(resultObject['timeAxle'].length > (counter + 1)){
+    var currentIndex = ((graphParams['selectRange'] > 0) ? outerObj[graphParams['targetKey']] : graphParams['playerName']);
 
-      firstNewMoonDay = resultObject['timeAxle'][counter];
-      lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');
-
-      if((claimedDay >= firstNewMoonDay) && 
-        (claimedDay <= lastNewMoonDay)){
-          if(avgIncIndex.length > 0){
-            statObject[outClaimsObject[objectIndex]][0][counter] +=  parseFloat(outClaimsObject[avgIncIndex]);
-          }
-          else{
-            statObject[outClaimsObject[objectIndex]][0][counter] +=  1;
-          }
-          sortable[statObject[outClaimsObject[objectIndex]][1]][1] += 1;
-      }
-      else if(claimedDay > lastNewMoonDay){
-       
-        var d1 = new Date(lastNewMoonDay);
-        var d2 = new Date(firstNewMoonDay);
-        
-        var daySpan = (Math.abs(d1-d2) / 86400000);
-        
-        for (var statObjKey in statObject) {
-          statObject[statObjKey][0][counter] = (statObject[statObjKey][0][counter] / daySpan);
-        };
-       
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(avgIncIndex.length > 0){
-              statObject[outClaimsObject[objectIndex]][0][counter] +=  parseFloat(outClaimsObject[avgIncIndex]);
-            }
-            else{
-              statObject[outClaimsObject[objectIndex]][0][counter] +=  1;
-            }
-           
-            sortable[statObject[outClaimsObject[objectIndex]][1]][1] += 1;
-          }
-        }
-      }
-    }
-  }
-
-  var d1 = new Date(lastNewMoonDay);
-  var d2 = new Date(firstNewMoonDay);
-        
-  var daySpan = (Math.abs(d1-d2) / 86400000);
-        
-  for (var statObjKey in statObject) {
-    statObject[statObjKey][0][counter] = (statObject[statObjKey][0][counter] / daySpan);
-  };
-  
-  sortable.sort(
-    function(a, b) {
-      return b[1] - a[1]
-    }
-  );
-
-  if(sortable.length >= selectRange){
-    for (var m = 0; m < selectRange; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], statObject[sortable[m][0]][0]]);
-    };
-  }
-  else{
-    for (var m = 0; m < sortable.length; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], statObject[sortable[m][0]][0]]);
-    };
-  }
- 
-  callback(resultObject);
-}
-
-function calcMultipleAvgPerDayInMonth(resultObject, parsedStatData, objectIndex, keyIndex, avgIncIndex, selectRange, callback){
-
-  var statObject = {};
-  var sortable = [];
-
-  var sortIndex = 0;
-  var counter = 0;
-  var avg = 0;
-
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
-
-    if(!statObject.hasOwnProperty(outClaimsObject[objectIndex])){
-      statObject[outClaimsObject[objectIndex]] = [{'/01': [0, 0], '/02': [0, 0], '/03': [0, 0], '/04': [0, 0], '/05': [0, 0], '/06': [0, 0], 
+    if(!statObject.hasOwnProperty(currentIndex)){
+      statObject[currentIndex] = [{'/01': [0, 0], '/02': [0, 0], '/03': [0, 0], '/04': [0, 0], '/05': [0, 0], '/06': [0, 0], 
                     '/07': [0, 0], '/08': [0, 0], '/09': [0, 0], '/10': [0, 0], '/11': [0, 0], 
                     '/12': [0, 0], '/13': [0, 0], '/14': [0, 0], '/15': [0, 0], '/16': [0, 0], '/17': [0, 0], '/18': [0, 0], 
                       '/19': [0, 0], '/20': [0, 0], '/21': [0, 0], '/22': [0, 0], '/23': [0, 0], '/24': [0, 0], 
                       '/25': [0, 0], '/26': [0, 0], '/27': [0, 0], '/28': [0, 0], '/29': [0, 0], '/30': [0, 0], '/31': [0, 0]}, 0, ''];
-      statObject[outClaimsObject[objectIndex]][1] = sortIndex;
+      statObject[currentIndex][1] = sortIndex;
       sortIndex++;
-      sortable.push([outClaimsObject[objectIndex], 0]);
+      sortable.push([currentIndex, 0]);
  
     }
-    if(resultObject['timeAxle'].length > (counter + 1)){
-
-      var firstNewMoonDay = resultObject['timeAxle'][counter];
-      var lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');
+      var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
+      var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
+      var claimedDay = outerObj[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');
     
-      
-
-      if((claimedDay >= firstNewMoonDay) && 
+      if(claimedDay < firstNewMoonDay){
+        outerObjKey += 1;
+      }
+      else if((claimedDay >= firstNewMoonDay) && 
         (claimedDay <= lastNewMoonDay)){
-          if(avgIncIndex.length > 0){
-            statObject[outClaimsObject[objectIndex]][0][claimedDay.substring(7, 10)][1] +=  parseFloat(outClaimsObject[avgIncIndex]);
+          if(graphParams['incValueKey'].length > 0){
+            statObject[currentIndex][0][claimedDay.substring(7, 10)][1] += parseFloat(outerObj[graphParams['incValueKey']]);
           }
           else{
-            statObject[outClaimsObject[objectIndex]][0][claimedDay.substring(7, 10)][1] +=  1;
+            statObject[currentIndex][0][claimedDay.substring(7, 10)][1] += 1;
           }
-          if(statObject[outClaimsObject[objectIndex]][2] != claimedDay){
-            statObject[outClaimsObject[objectIndex]][0][claimedDay.substring(7, 10)][0] += 1;
-            statObject[outClaimsObject[objectIndex]][2] = claimedDay; 
+          if(statObject[currentIndex][2] != claimedDay){
+            statObject[currentIndex][0][claimedDay.substring(7, 10)][0] += 1;
+            statObject[currentIndex][2] = claimedDay; 
           }
-          sortable[statObject[outClaimsObject[objectIndex]][1]][1] += 1;
+          sortable[statObject[currentIndex][1]][1] += 1;
+          outerObjKey += 1;
       }
-      else if(claimedDay > lastNewMoonDay){
-
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(avgIncIndex.length > 0){
-            statObject[outClaimsObject[objectIndex]][0][claimedDay.substring(7, 10)][1] +=  parseFloat(outClaimsObject[avgIncIndex]);
-            }
-            else{
-              statObject[outClaimsObject[objectIndex]][0][claimedDay.substring(7, 10)][1] +=  1;
-            }
-            if(statObject[outClaimsObject[objectIndex]][2] != claimedDay){
-              statObject[outClaimsObject[objectIndex]][0][claimedDay.substring(7, 10)][0] += 1;
-              statObject[outClaimsObject[objectIndex]][2] = claimedDay; 
-            }
-            sortable[statObject[outClaimsObject[objectIndex]][1]][1] += 1;
-          }
-        }
+      else{
+        timeCounter += 1;
       }
-    }
   }
 
   resultObject.timeAxle.length = 0;
@@ -378,118 +889,100 @@ function calcMultipleAvgPerDayInMonth(resultObject, parsedStatData, objectIndex,
     }
   );
 
-  if(sortable.length >= selectRange){
-    for (var m = 0; m < selectRange; m++) {
-      var arr1 = [];
-      var statKey = sortable[m][0];
-      for(var j in statObject[statKey][0]){
-        if(statObject[statKey][0][j][0] != 0){
-          statObject[statKey][0][j][1] = (statObject[statKey][0][j][1] / statObject[statKey][0][j][0]);
-          arr1.push(statObject[statKey][0][j][1]);
-        }
-        else{
-          arr1.push(0);
-        }  
-      }
-      resultObject['valueAxle'].push([statKey, arr1]);
-    };
+  if((graphParams['selectRange'] <= 0) && (sortable.length > 0)){
+    graphParams['selectRange'] = 1;
+  }
+  else if(sortable.length >= graphParams['selectRange']){
+
   }
   else{
-    for (var m = 0; m < sortable.length; m++) {
-      var arr1 = [];
-      for(var j in statObject[sortable[m][0]][0]){
-        if(statObject[statKey][0][j][0] != 0){
-          statObject[sortable[m][0]][0][j][1] = (statObject[sortable[m][0]][0][j][1] / statObject[sortable[m][0]][0][j][0]);
-          arr1.push(statObject[sortable[m][0]][0][j][1]);
-        }
-        else{
-          arr1.push(0);
-        }
-      }
-      resultObject['valueAxle'].push([sortable[m][0], arr1]);
-    };
+    graphParams['selectRange'] = sortable.length;
   }
+
+  for (var m = 0; m < graphParams['selectRange']; m++) {
+    var arr1 = [];
+    var statKey = sortable[m][0];
+    for(var j in statObject[statKey][0]){
+      if(statObject[statKey][0][j][0] != 0){
+        statObject[statKey][0][j][1] = (statObject[statKey][0][j][1] / statObject[statKey][0][j][0]);
+        arr1.push(statObject[statKey][0][j][1]);
+      }
+      else{
+        arr1.push(0);
+      }  
+    }
+    resultObject['valueAxle'].push([statKey, arr1, false]);
+  };
+  
  
   callback(resultObject);
 }
 
-function calcMultipleTotalStats(resultObject, parsedStatData, objectIndex, keyIndex, totIncIndex, resetTot, selectRange, callback){
-
-  resultObject['valueAxle'] = [];
+function processGraphPerNewMoon(resultObject, parsedStatData, graphParams, callback){
 
   var statObject = {};
   var sortable = [];
 
   var sortIndex = 0;
-  var counter = 0;
-  var tot = 0;
+  var timeCounter = 0;
+  var outerObjKey = 0;
 
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
+  while((resultObject['timeAxle'].length > (timeCounter + 1)) && (outerObjKey < parsedStatData.length)){
+    var outerObj = parsedStatData[outerObjKey];
 
-    if(!statObject.hasOwnProperty(outClaimsObject[objectIndex])){
-      statObject[outClaimsObject[objectIndex]] = [[], 0, 0];
-      statObject[outClaimsObject[objectIndex]][1] = sortIndex;
+    var currentIndex = ((graphParams['selectRange'] > 0) ? outerObj[graphParams['targetKey']] : graphParams['playerName']);
+
+    if(!statObject.hasOwnProperty(currentIndex)){
+      statObject[currentIndex] = [[], 0, 0];
+      statObject[currentIndex][1] = sortIndex;
       sortIndex++;
-      sortable.push([outClaimsObject[objectIndex], 0])
-      for (var k = 0; k < resultObject['timeAxle'].length; k++) {
-        statObject[outClaimsObject[objectIndex]][0].push(0);
+      sortable.push([currentIndex, 0])
+      for (var k = 0; k < (resultObject['timeAxle'].length - 1); k++) {
+        statObject[currentIndex][0].push(0);
       };
     }
-    if(resultObject['timeAxle'].length > (counter + 1)){
 
-      var firstNewMoonDay = resultObject['timeAxle'][counter];
-      var lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');
-    
-      if((claimedDay >= firstNewMoonDay) && 
+    var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
+    var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
+    var claimedDay = outerObj[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');
+      
+      if(claimedDay < firstNewMoonDay){
+        outerObjKey += 1;
+      }
+      else if((claimedDay >= firstNewMoonDay) && 
         (claimedDay <= lastNewMoonDay)){
-          if(totIncIndex.length > 0){
-             statObject[outClaimsObject[objectIndex]][2] += parseFloat(outClaimsObject[totIncIndex]);
+          if(graphParams['incValueKey'].length > 0){
+             statObject[currentIndex][2] += parseFloat(outerObj[graphParams['incValueKey']]);
           }
           else{
-            statObject[outClaimsObject[objectIndex]][2] += 1;
+            statObject[currentIndex][2] += 1;
           }
-          sortable[statObject[outClaimsObject[objectIndex]][1]][1] += 1;
-      }
-      else if(claimedDay > lastNewMoonDay){
+          sortable[statObject[currentIndex][1]][1] += 1;
+          outerObjKey += 1;
+      }  
+      else{
         
-        //resultObject['valueAxle'].push(tot); //Float?
-        for (var statObjKey in statObject) {
-          statObject[statObjKey][0][counter] = (statObject[statObjKey][2]);
+        var d1 = new Date(lastNewMoonDay);
+        var d2 = new Date(firstNewMoonDay);
+        
+        var daySpan = (graphParams['average'] === true ? (Math.abs(d1-d2) / 86400000) : 1);
 
-          if(resetTot === true){
+        for (var statObjKey in statObject) {
+          statObject[statObjKey][0][timeCounter] = (statObject[statObjKey][2] / daySpan);
+
+          if(graphParams['runningTotal'] === false){
              statObject[statObjKey][2] = 0;
+          }
+          else{
+            for (var i = 0; i < (resultObject['timeAxle'].length - timeCounter - 1); i++) {
+              statObject[statObjKey][0][i + timeCounter] = (statObject[statObjKey][2] / daySpan);
+            };
           }
         };
 
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(totIncIndex.length > 0){
-              statObject[outClaimsObject[objectIndex]][2] += parseFloat(outClaimsObject[totIncIndex]);
-            }
-            else{
-              statObject[outClaimsObject[objectIndex]][2] += 1;
-            }
-            sortable[statObject[outClaimsObject[objectIndex]][1]][1] += 1;
-          }
-        }
+        timeCounter += 1;
       }
-    }
   }
-
-  for (var statObjKey in statObject) {
-          statObject[statObjKey][0][counter] = (statObject[statObjKey][2]);
-    if(resetTot === true){
-      statObject[statObjKey][2] = 0;
-    }
-  };
 
   sortable.sort(
     function(a, b) {
@@ -497,22 +990,31 @@ function calcMultipleTotalStats(resultObject, parsedStatData, objectIndex, keyIn
     }
   );
 
-  if(sortable.length >= selectRange){
-    for (var m = 0; m < selectRange; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], statObject[sortable[m][0]][0]]);
-    };
+  if((graphParams['selectRange'] <= 0) && (sortable.length > 0)){
+    resultObject['valueAxle'].push([sortable[0][0], statObject[sortable[0][0]][0], false]);
   }
   else{
-    for (var m = 0; m < sortable.length; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], statObject[sortable[m][0]][0]]);
-    };
+    if(sortable.length >= graphParams['selectRange']){
+      for (var m = 0; m < graphParams['selectRange']; m++) {
+        resultObject['valueAxle'].push([sortable[m][0], statObject[sortable[m][0]][0], false]);
+      };
+    }
+    else{
+      for (var m = 0; m < sortable.length; m++) {
+        resultObject['valueAxle'].push([sortable[m][0], statObject[sortable[m][0]][0], false]);
+      };
+    }
   }
-  //console.log(statObject);
-  //console.log(resultObject);
+  
+  for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
+    resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
+  };
+  resultObject['timeAxle'].pop();
+ 
   callback(resultObject);
 };
 
-function calcAvgPerHour(resultObject, parsedStatData, keyIndex, totIncIndex, callback){
+function processGraphAvgPerHour(resultObject, parsedStatData, graphParams, callback){
 
   var weekDay = new Array(7);
   weekDay[0]=  'Monday';
@@ -551,22 +1053,25 @@ function calcAvgPerHour(resultObject, parsedStatData, keyIndex, totIncIndex, cal
 
   var prevDay = '';
   var prevHour = '';
-  var counter = 0;
+  var timeCounter = 0;
+  var outerObjKey = 0;
   var tot = 0;
 
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
-    if(resultObject['timeAxle'].length > (counter + 1)){
+  while((resultObject['timeAxle'].length > (timeCounter + 1)) && (outerObjKey < parsedStatData.length)){
+    var outClaimsObject = parsedStatData[outerObjKey];
 
-      var firstNewMoonDay = resultObject['timeAxle'][counter];
-      var lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');
-      var claimedHour = outClaimsObject[keyIndex].substring(10, 13);
+      var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
+      var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
+      var claimedDay = outClaimsObject[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');
+      var claimedHour = outClaimsObject[graphParams['timeKey']].substring(10, 13);
 
-      if((claimedDay >= firstNewMoonDay) && 
+      if(claimedDay < firstNewMoonDay){
+        outerObjKey += 1;
+      }
+      else if((claimedDay >= firstNewMoonDay) && 
         (claimedDay <= lastNewMoonDay)){
-          if(totIncIndex.length > 0){
-             hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][1] += parseFloat(outClaimsObject[totIncIndex]);      
+          if(graphParams['incValueKey'].length > 0){
+             hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][1] += parseFloat(outClaimsObject[graphParams['incValueKey']]);      
           }
           else{
             hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][1] += 1;
@@ -577,38 +1082,15 @@ function calcAvgPerHour(resultObject, parsedStatData, keyIndex, totIncIndex, cal
             prevDay = claimedDay; 
             prevHour = claimedHour;
           }
+          outerObjKey += 1;
       }
-      else if(claimedDay > lastNewMoonDay){
-
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(totIncIndex.length > 0){
-              //tot +=  parseFloat(outClaimsObject[totIncIndex]);
-              hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][1] += parseFloat(outClaimsObject[totIncIndex]);
-            }
-            else{
-              //tot += 1;
-              hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][1] += 1;
-            }
-
-            if(prevDay != claimedDay){
-              hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][0] += 1;
-              prevDay = claimedDay; 
-            }
-          }
-        }
+      else{
+        timeCounter += 1;
       }
-    }
   }
   resultObject.timeAxle.length = 0;
-  resultObject['valueAxle'] = [['Monday', []], ['Tuesday', []], ['Wednesday', []], ['Thursday', []], ['Friday', []], 
-  ['Saturday', []], ['Sunday', []]];
+  resultObject['valueAxle'] = [['Monday', [], false], ['Tuesday', [], false], ['Wednesday', [], false], 
+  ['Thursday', [], false], ['Friday', [], false], ['Saturday', [], false], ['Sunday', [], false]];
   for(var i in hours){
     var iObj = hours[i];
     var jCounter = 0;
@@ -621,233 +1103,25 @@ function calcAvgPerHour(resultObject, parsedStatData, keyIndex, totIncIndex, cal
     }
     resultObject['timeAxle'].push(i.substring(1, 3));
   }
-  //console.log(resultObject);
-  callback(resultObject);
-}
-
-function calcAvgPerDayInMonth(resultObject, parsedStatData, keyIndex, totIncIndex, callback){
-
-  var monthDays = {'/01': [0, 0], '/02': [0, 0], '/03': [0, 0], '/04': [0, 0], '/05': [0, 0], '/06': [0, 0], 
-                    '/07': [0, 0], '/08': [0, 0], '/09': [0, 0], '/10': [0, 0], '/11': [0, 0], 
-                    '/12': [0, 0], '/13': [0, 0], '/14': [0, 0], '/15': [0, 0], '/16': [0, 0], '/17': [0, 0], '/18': [0, 0], 
-                      '/19': [0, 0], '/20': [0, 0], '/21': [0, 0], '/22': [0, 0], '/23': [0, 0], '/24': [0, 0], 
-                      '/25': [0, 0], '/26': [0, 0], '/27': [0, 0], '/28': [0, 0], '/29': [0, 0], '/30': [0, 0], '/31': [0, 0]};
   
-
-  var prevDate = '';
-  var counter = 0;
-  var tot = 0;
-
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
-    if(resultObject['timeAxle'].length > (counter + 1)){
-
-      var firstNewMoonDay = resultObject['timeAxle'][counter];
-      var lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');
-    
-      if((claimedDay >= firstNewMoonDay) && 
-        (claimedDay <= lastNewMoonDay)){
-          if(totIncIndex.length > 0){
-             monthDays[claimedDay.substring(7, 10)][1] += parseFloat(outClaimsObject[totIncIndex]);
-              
-          }
-          else{
-            monthDays[claimedDay.substring(7, 10)][1] += 1;
-          }
-
-          if(prevDate != claimedDay){
-            monthDays[claimedDay.substring(7, 10)][0] += 1;
-            prevDate = claimedDay; 
-          }
-      }
-      else if(claimedDay > lastNewMoonDay){
-
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(totIncIndex.length > 0){
-              monthDays[claimedDay.substring(7, 10)][1] += parseFloat(outClaimsObject[totIncIndex]);
-            }
-            else{
-              monthDays[claimedDay.substring(7, 10)][1] += 1;
-            }
-
-            if(prevDate != claimedDay){
-              monthDays[claimedDay.substring(7, 10)][0] += 1;
-              prevDate = claimedDay; 
-            }
-          }
-        }
-      }
-    }
-  }
-  resultObject.timeAxle.length = 0;
-  resultObject['valueAxle'] = [['_', []]];
-  for(var i in monthDays){
-
-    if(monthDays[i][0] != 0){
-      monthDays[i][1] = (monthDays[i][1] / monthDays[i][0]);
-      resultObject['valueAxle'][0][1].push(monthDays[i][1]);
-    }
-    else{
-      resultObject['valueAxle'][0][1].push(0);
-    }
-
-    resultObject['timeAxle'].push(i.substring(1, 3));
-    
-  }
   callback(resultObject);
 }
 
-function calcTotalStats(resultObject, parsedStatData, keyIndex, totIncIndex, resetTot, callback){
-
-  resultObject['valueAxle'] = [['_', []]];
-
-  var counter = 0;
-  var tot = 0;
-
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
-    if(resultObject['timeAxle'].length > (counter + 1)){
-
-      var firstNewMoonDay = resultObject['timeAxle'][counter];
-      var lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');
-    
-      if((claimedDay >= firstNewMoonDay) && 
-        (claimedDay <= lastNewMoonDay)){
-          if(totIncIndex.length > 0){
-             tot +=  parseFloat(outClaimsObject[totIncIndex]);
-          }
-          else{
-            tot += 1;
-          }
-      }
-      else if(claimedDay > lastNewMoonDay){
-        
-        resultObject['valueAxle'][0][1].push(tot); 
-
-        if(resetTot === true){
-          tot = 0;
-        }
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(totIncIndex.length > 0){
-              tot +=  parseFloat(outClaimsObject[totIncIndex]);
-            }
-            else{
-              tot += 1;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  resultObject['valueAxle'][0][1].push(tot);
-
-  for(var i = ((resultObject['timeAxle'].length - 1) - resultObject['valueAxle'][0][1].length); i >= 0; i--){
-    resultObject['valueAxle'][0][1].push(0);
-  }
-  //console.log(resultObject);
-  callback(resultObject);
-};
-
-function calcAverageData(resultObject, parsedStatData, keyIndex, avgIncIndex, callback){
-
-  resultObject['valueAxle'] = [['_', []]];
-
-  var counter = 0;
-  var avg = 0;
-
-  var firstNewMoonDay;
-  var lastNewMoonDay;
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
-    if(resultObject['timeAxle'].length > (counter + 1)){
-
-      firstNewMoonDay = resultObject['timeAxle'][counter];
-      lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');
-    
-      if((claimedDay >= firstNewMoonDay) && 
-        (claimedDay <= lastNewMoonDay)){
-          if(avgIncIndex.length > 0){
-             avg +=  parseFloat(outClaimsObject[avgIncIndex]);
-          }
-          else{
-            avg += 1;
-          }
-      }
-      else if(claimedDay > lastNewMoonDay){
-       
-        var d1 = new Date(lastNewMoonDay);
-        var d2 = new Date(firstNewMoonDay);
-        
-        var daySpan = (Math.abs(d1-d2) / 86400000);
-        
-        resultObject['valueAxle'][0][1].push((avg / daySpan));
-
-        avg = 0;
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(avgIncIndex.length > 0){
-              avg +=  parseFloat(outClaimsObject[avgIncIndex]);
-            }
-            else{
-              avg += 1;
-            }
-          }
-        }
-      }
-    }
-  }
-  var d1 = new Date(lastNewMoonDay);
-  var d2 = new Date(firstNewMoonDay);
-      
-  var daySpan = (Math.abs(d1-d2) / 86400000);
-        
-  resultObject['valueAxle'][0][1].push((avg / daySpan));
-
-  for(var i = ((resultObject['timeAxle'].length - 1) - resultObject['valueAxle'][0][1].length); i >= 0; i--){
-    resultObject['valueAxle'][0][1].push(0);
-  }
-
-  callback(resultObject);
-};
-
-function calcStatTopDate(resultObject, parsedStatData, objectIndex, keyIndex, avgIncIndex, selectedType, selectRange, callback){
+function processGraphTopDate(resultObject, parsedStatData, graphParams, callback){
 
   var statObject = {};
   var sortable = [];
 
   var sortIndex = 0;
-  var counter = 0;
+  var timeCounter = 0;
+  var outerObjKey = 0;
   var avg = 0;
 
-  for (var outClaimsKey in parsedStatData) {
-    var outClaimsObject = parsedStatData[outClaimsKey];
+  while((resultObject['timeAxle'].length > (timeCounter + 1)) && (outerObjKey < parsedStatData.length)){
+    var outClaimsObject = parsedStatData[outerObjKey];
 
-    var selectedObject = outClaimsObject[objectIndex];
-    switch(selectedType){
+    var selectedObject = outClaimsObject[graphParams['timeKey']];
+    switch(graphParams['groupBy']){
       case GroupByValue.Overall :
       break;
       case GroupByValue.ByDate :
@@ -867,43 +1141,28 @@ function calcStatTopDate(resultObject, parsedStatData, objectIndex, keyIndex, av
       sortIndex++;
       sortable.push([selectedObject, 0])
     }
-    if(resultObject['timeAxle'].length > (counter + 1)){
 
-      var firstNewMoonDay = resultObject['timeAxle'][counter];
-      var lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-      var claimedDay = outClaimsObject[keyIndex].substring(0, 10).replace(/\-/g, '/');  
+      var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
+      var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
+      var claimedDay = outClaimsObject[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');  
 
+      if(claimedDay < firstNewMoonDay){
+        outerObjKey += 1;
+      }
       if((claimedDay >= firstNewMoonDay) && 
         (claimedDay <= lastNewMoonDay)){
-          if(avgIncIndex.length > 0){
-            statObject[selectedObject][0] +=  parseFloat(outClaimsObject[avgIncIndex]);
+          if(graphParams['incValueKey'].length > 0){
+            statObject[selectedObject][0] +=  parseFloat(outClaimsObject[graphParams['incValueKey']]);
           }
           else{
             statObject[selectedObject][0] +=  1;
           }
           sortable[statObject[selectedObject][1]][1] += 1;
+          outerObjKey += 1;
       }
-      else if(claimedDay > lastNewMoonDay){
-       
-        counter += 1;
-
-        firstNewMoonDay = lastNewMoonDay;
-        if(resultObject['timeAxle'].length > (counter + 1)){
-          lastNewMoonDay = resultObject['timeAxle'][counter + 1];
-
-          if((claimedDay >= firstNewMoonDay) && 
-            (claimedDay <= lastNewMoonDay)){
-            if(avgIncIndex.length > 0){
-              statObject[selectedObject][0] +=  parseFloat(outClaimsObject[avgIncIndex]);
-            }
-            else{
-              statObject[selectedObject][0] +=  1;
-            }
-            sortable[statObject[selectedObject][1]][1] += 1;
-          }
-        }
+      else{
+        timeCounter += 1;
       }
-    }
   }
   
   sortable.sort(
@@ -913,118 +1172,42 @@ function calcStatTopDate(resultObject, parsedStatData, objectIndex, keyIndex, av
   );
 
   resultObject['timeAxle'] = ['Top Date'];
-  if(sortable.length >= selectRange){
-    for (var m = 0; m < selectRange; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], [statObject[sortable[m][0]][0]]]);
+  if(sortable.length >= graphParams['selectRange']){
+    for (var m = 0; m < graphParams['selectRange']; m++) {
+      resultObject['valueAxle'].push([sortable[m][0], [statObject[sortable[m][0]][0]], false]);
     };
   }
   else{
     for (var m = 0; m < sortable.length; m++) {
-      resultObject['valueAxle'].push([sortable[m][0], [statObject[sortable[m][0]][0]]]);
+      resultObject['valueAxle'].push([sortable[m][0], [statObject[sortable[m][0]][0]], false]);
     };
   }
  
   callback(resultObject);
 }
 
-function getGraphMultipleObjectsData(selectRange, timeframeSelector, resultObject, filteredData, objectIndex, avgTimeIndex, avgIncIndex, callback){
+function processMultipleGraphData(resultObject, filteredData, graphParams, callback){
 
 
-  if(timeframeSelector ===  TimeFrame.PerDay){
-    calcMultipleAverageData(resultObject, filteredData, objectIndex, avgTimeIndex, avgIncIndex, selectRange, function(averageData){
-      for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
-        resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
-      };
-      resultObject['timeAxle'].pop();
-      for (var i = 0; i < resultObject['valueAxle'].length; i++) {
-        resultObject['valueAxle'][i][1].pop();
-      };
+  if(graphParams['timeframeSelector'] ===  TimeFrame.PerDay){
+    graphParams['average'] = true;
+    processGraphPerNewMoon(resultObject, filteredData, graphParams, function(averageData){
       callback(averageData);
     });
   }
-  else if(timeframeSelector ===  TimeFrame.PerDayInMonth){
-    calcMultipleAvgPerDayInMonth(resultObject, filteredData, objectIndex, avgTimeIndex, avgIncIndex, selectRange, function(averageData){
+  else if(graphParams['timeframeSelector'] ===  TimeFrame.PerDayInMonth){
+    processGraphPerDayInMonth(resultObject, filteredData, graphParams, function(averageData){
       callback(averageData);
     });
   }
-  else if(timeframeSelector ===  TimeFrame.PerMoon){
-    calcMultipleTotalStats(resultObject, filteredData, objectIndex, avgTimeIndex, avgIncIndex, true, selectRange, function(averageData){
-      for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
-        resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
-      };
-      resultObject['timeAxle'].pop();
-      for (var i = 0; i < resultObject['valueAxle'].length; i++) {
-        resultObject['valueAxle'][i][1].pop();
-      };
+  else if(graphParams['timeframeSelector'] ===  TimeFrame.PerMoon){
+    processGraphPerNewMoon(resultObject, filteredData, graphParams, function(averageData){
       callback(averageData);
     });
   }
-  else if(timeframeSelector ===  TimeFrame.AllTime){
-    calcMultipleTotalStats(resultObject, filteredData, objectIndex, avgTimeIndex, avgIncIndex, false, selectRange, function(totData){
-        for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
-          resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
-        };
-        resultObject['timeAxle'].pop();
-        for (var i = 0; i < resultObject['valueAxle'].length; i++) {
-          resultObject['valueAxle'][i][1].pop();
-        };
-        callback(totData);
-    });
-  }
-  else{
-    callback(null);
-  }
-  /*
-  else if(timeframeSelector ===  TimeFrame.PerHourInWeek){
-    calcAvgPerHour(resultObject, filteredData, avgTimeIndex, avgIncIndex, function(averageData){
-      callback(averageData);
-    });
-  }
-  
-  */
-
-}
-
-function getGraphSingleObjectData(timeframeSelector, resultObject, filteredData, avgTimeIndex, avgIncIndex, callback){
-
-
-  if(timeframeSelector ===  TimeFrame.PerDay){
-    calcAverageData(resultObject, filteredData, avgTimeIndex, avgIncIndex, function(averageData){
-      for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
-        resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
-      };
-      resultObject['timeAxle'].pop();
-      resultObject['valueAxle'][0][1].pop();
-      callback(averageData);
-    });
-  }
-  else if(timeframeSelector ===  TimeFrame.PerMoon){
-    calcTotalStats(resultObject, filteredData, avgTimeIndex, avgIncIndex, true, function(averageData){
-      for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
-        resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
-      };
-      resultObject['timeAxle'].pop();
-      resultObject['valueAxle'][0][1].pop();
-      callback(averageData);
-    });
-  }
-  else if(timeframeSelector ===  TimeFrame.PerDayInMonth){
-    calcAvgPerDayInMonth(resultObject, filteredData, avgTimeIndex, avgIncIndex, function(averageData){
-      callback(averageData);
-    });
-  }
-  else if(timeframeSelector ===  TimeFrame.PerHourInWeek){
-    calcAvgPerHour(resultObject, filteredData, avgTimeIndex, avgIncIndex, function(averageData){
-      callback(averageData);
-    });
-  }
-  else if(timeframeSelector ===  TimeFrame.AllTime){
-    calcTotalStats(resultObject, filteredData, avgTimeIndex, avgIncIndex, false, function(totData){
-        for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
-          resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
-        };
-        resultObject['timeAxle'].pop();
-        resultObject['valueAxle'][0][1].pop();
+  else if(graphParams['timeframeSelector'] ===  TimeFrame.AllTime){
+    graphParams['runningTotal'] = true;
+    processGraphPerNewMoon(resultObject, filteredData, graphParams, function(totData){
         callback(totData);
     });
   }
@@ -1033,70 +1216,76 @@ function getGraphSingleObjectData(timeframeSelector, resultObject, filteredData,
   }
 }
 
-function getGraph(selectRange, groupBy, timeframeSelector, resultObject, filteredData, avgTimeIndex, avgIncIndex, callback){
-  if(groupBy === GroupByValue.Overall){
-    getGraphSingleObjectData(timeframeSelector, resultObject, filteredData, avgTimeIndex, avgIncIndex, function(graphData){
+function processSingleGraphData(resultObject, filteredData, graphParams, callback){
+
+  if(graphParams['timeframeSelector'] ===  TimeFrame.PerDay){
+    graphParams['selectRange'] = 0;
+    graphParams['average'] = true;
+    processGraphPerNewMoon(resultObject, filteredData, graphParams, function(averageData){
+      callback(averageData);
+    });
+  }
+  else if(graphParams['timeframeSelector'] ===  TimeFrame.PerMoon){
+    graphParams['selectRange'] = 0;
+    processGraphPerNewMoon(resultObject, filteredData, graphParams, function(averageData){
+      callback(averageData);
+    });
+  }
+  else if(graphParams['timeframeSelector'] ===  TimeFrame.PerDayInMonth){
+    graphParams['selectRange'] = 0;
+    processGraphPerDayInMonth(resultObject, filteredData, graphParams, function(averageData){
+      callback(averageData);
+    });
+  }
+  else if(graphParams['timeframeSelector'] ===  TimeFrame.PerHourInWeek){
+    processGraphAvgPerHour(resultObject, filteredData, graphParams, function(averageData){
+      callback(averageData);
+    });
+  }
+  else if(graphParams['timeframeSelector'] ===  TimeFrame.AllTime){
+    graphParams['selectRange'] = 0;
+    graphParams['runningTotal'] = true;
+    processGraphPerNewMoon(resultObject, filteredData, graphParams, function(totData){
+        callback(totData);
+    });
+  }
+  else{
+    callback(null);
+  }
+}
+
+function processGraph(graphParams, resultObject, filteredData, callback){
+  if(graphParams['groupBy'] === GroupByValue.Overall){
+    processSingleGraphData(resultObject, filteredData, graphParams, function(graphData){
         callback(graphData);
     });
   }
-  else if(groupBy === GroupByValue.Tower){
-    getGraphMultipleObjectsData(selectRange, timeframeSelector, resultObject, filteredData, 'tower_id', avgTimeIndex, avgIncIndex, function(graphData){
+  else if(graphParams['groupBy'] === GroupByValue.Tower){
+    graphParams['targetKey'] = 'tower_id';
+    processMultipleGraphData(resultObject, filteredData, graphParams, function(graphData){
         callback(graphData);
     });
   }
-  else if((groupBy === GroupByValue.ByDate) || (groupBy === GroupByValue.ByMonth) || (groupBy === GroupByValue.ByHour)){
-    calcStatTopDate(resultObject, filteredData, avgTimeIndex, avgTimeIndex, avgIncIndex, groupBy, selectRange, function(graphData){
+  else if((graphParams['groupBy'] === GroupByValue.ByDate) || (graphParams['groupBy'] === GroupByValue.ByMonth) || (graphParams['groupBy'] === GroupByValue.ByHour)){
+    processGraphTopDate(resultObject, filteredData, graphParams, function(graphData){
         callback(graphData);
     });
   }
   else{
-    getGraphMultipleObjectsData(selectRange, timeframeSelector, resultObject, filteredData, 'formatted_address', avgTimeIndex, avgIncIndex, function(graphData){
+    graphParams['targetKey'] = 'formatted_address';
+    processMultipleGraphData(resultObject, filteredData, graphParams, function(graphData){
         callback(graphData);
     })
   }
 }
 
-exports.setKey = function(req, res){
-  var reqApiKey = req.body.myApiKey;
-
-  if(typeof reqApiKey !== 'undefined'){
-    req.session.currentKey = reqApiKey;
-
-    console.log(req.session.currentKey);
-    
-    getJSON(req.session.currentKey, '1', function(playerData){
-      if(playerData != null){
-        if(JSON.parse(playerData).hasOwnProperty('alias')){
-          req.session.currentPlayer = JSON.parse(playerData)["alias"];
-
-          console.log("player: " + req.session.currentPlayer);
-        }
-      }
-      res.json(playerData);
-    });
-  }
-  else{
-    //res.json(null);
-    res.json(null);
-  }
-  //res.redirect('/');
-};
-
 exports.updateGraph = function(req, res){
-  //var reqApiKey = req.body.myApiKey;
-  //var reqSelectedItem = req.body.myKeySelector;
   var fromDate = req.body.myFromDate;
   var toDate = req.body.myToDate;
   var presetSelector = req.body.myPresetSelector;
   var timeframeSelector = req.body.myTimeframeSelector;
   var groupBy = req.body.myGroupByRadio;
   var selectRange = parseInt(req.body.mySelectionRange, 10);
-  
-  console.log('selectRange: ' + selectRange);
-  console.log('presetSelector: ' + presetSelector);
-  console.log('timeframeSelector: ' + timeframeSelector);
-  console.log('groupBy: ' + groupBy);
-  //console.log(req.session.currentKey);
   
   if(typeof req.session.currentKey !== 'undefined'){
   
@@ -1124,8 +1313,7 @@ exports.updateGraph = function(req, res){
       break;
       
     }
-    //console.log(reqSelectedItem);
-    console.log(presetSelector);
+
     getJSON(req.session.currentKey, '8', function(moonData){
     if(moonData != null){
       var parsedNewMoon = JSON.parse(moonData); 
@@ -1145,95 +1333,106 @@ exports.updateGraph = function(req, res){
 
       getJSON(req.session.currentKey, reqSelectedItem, function(statData){
         var parsedStatData = JSON.parse(statData);
+
+        var graphParams = {'playerName': req.session.currentPlayer, 
+        'selectRange': selectRange, 'groupBy': groupBy, 'timeframeSelector': timeframeSelector,
+        'timeKey': '', 'incValueKey': '', 'targetKey': '', 'runningTotal': false, 'average': false};
+        
         if(presetSelector === GraphValue.NumberOfBuiltTowers){
-          getJSON(req.session.currentKey, '1', function(playerData){
-            var parsedPlayerData = JSON.parse(playerData);
 
-            filterJSON(parsedStatData, parsedPlayerData["playerId"],'player_id', function(filteredData){
+          filterJSON(parsedStatData, req.session.currentPlayerID,'player_id', function(filteredData){
 
-              getGraph(selectRange, groupBy, timeframeSelector, resultObject, filteredData, 'created_on', '', function(graphData){
-                res.json(JSON.stringify(graphData));
-              });
-          
+            graphParams['timeKey'] = 'created_on';
+            processGraph(graphParams, resultObject, filteredData, function(graphData){
+              res.json(JSON.stringify(graphData));
             });
+          
           });
+          
         }
         else if(presetSelector === GraphValue.NumberOfClaimsOnOtherPlayersTowers){
-          getJSON(req.session.currentKey, '1', function(playerData){
-            var parsedPlayerData = JSON.parse(playerData);
+          filterJSONOnEqual(parsedStatData, req.session.currentPlayerID,'previous_player_id', function(filteredData){
 
-            filterJSONOnEqual(parsedStatData, parsedPlayerData["playerId"],'previous_player_id', function(filteredData){
-
-              getGraph(selectRange, groupBy, timeframeSelector, resultObject, filteredData, 'claimed_on', '', function(graphData){
-                res.json(JSON.stringify(graphData));
-              });
-          
+            graphParams['timeKey'] = 'claimed_on';
+            processGraph(graphParams, resultObject, filteredData, function(graphData){
+              res.json(JSON.stringify(graphData));
             });
+          
           });
+        
         }
         else if(presetSelector === GraphValue.AmountOfGeldCollected){
-          getGraph(selectRange, groupBy, timeframeSelector, resultObject, parsedStatData, 'claimed_on', 'geld_collected', function(graphData){
+          graphParams['timeKey'] = 'claimed_on';
+          graphParams['incValueKey'] = 'geld_collected';
+          processGraph(graphParams, resultObject, parsedStatData, function(graphData){
             res.json(JSON.stringify(graphData));
           });
         }
         else if(presetSelector === GraphValue.AmountOfBonusCollected){
-          getGraph(selectRange, groupBy, timeframeSelector, resultObject, parsedStatData, 'claimed_on', 'geld_bonus', function(graphData){
+          graphParams['timeKey'] = 'claimed_on';
+          graphParams['incValueKey'] = 'geld_bonus';
+          processGraph(graphParams, resultObject, parsedStatData, function(graphData){
               res.json(JSON.stringify(graphData));
           });
         }
         else if(presetSelector === GraphValue.NumberOfClaimedTowers){
-          getGraph(selectRange, groupBy, timeframeSelector, resultObject, parsedStatData, 'claimed_on', '', function(graphData){
+          graphParams['timeKey'] = 'claimed_on';
+          processGraph(graphParams, resultObject, parsedStatData, function(graphData){
               res.json(JSON.stringify(graphData));
           });
         }
-        /*else if(presetSelector === GraphValue.PopularLocations){
-          getGraph(selectRange, groupBy, timeframeSelector, resultObject, parsedStatData, 'claimed_on', '', function(graphData){
-              res.json(JSON.stringify(graphData));
-          });
-        } */ 
         else if(presetSelector === GraphValue.NumberOfBuiltTowersAllPlayers){
-          getGraph(selectRange, groupBy, timeframeSelector, resultObject, parsedStatData, 'created_on', '', function(graphData){
+          graphParams['timeKey'] = 'created_on';
+          processGraph(graphParams, resultObject, parsedStatData, function(graphData){
               res.json(JSON.stringify(graphData));
           });
         }
         else if(presetSelector === GraphValue.MostClaims){
-          getLeaderboard(resultObject, parsedStatData, 'claim_count', selectRange, function(graphData){
+          processLeaderboard(resultObject, parsedStatData, 'claim_count', selectRange, req.session.currentPlayerID, function(graphData){
               res.json(JSON.stringify(graphData));
           });
         }
         else if(presetSelector === GraphValue.MostGeldCollected){
-          getLeaderboard(resultObject, parsedStatData, 'geld_collected', selectRange, function(graphData){
+          processLeaderboard(resultObject, parsedStatData, 'geld_collected', selectRange, req.session.currentPlayerID, function(graphData){
               res.json(JSON.stringify(graphData));
           });
         }
         else if(presetSelector === GraphValue.MostBuiltTowers){
-          getLeaderboard(resultObject, parsedStatData, 'count', selectRange, function(graphData){
+          processLeaderboard(resultObject, parsedStatData, 'count', selectRange, req.session.currentPlayerID, function(graphData){
               res.json(JSON.stringify(graphData));
           });
         }
         else if(presetSelector === GraphValue.HighestGeldBonus){
-          getLeaderboard(resultObject, parsedStatData, 'geld_bonus', selectRange, function(graphData){
+          processLeaderboard(resultObject, parsedStatData, 'geld_bonus', selectRange, req.session.currentPlayerID, function(graphData){
               res.json(JSON.stringify(graphData));
           });
         }
       });
     }
     else{
-      res.json(JSON.stringify({}));
+      res.json(null);
     }
     });
-  };
+  }
+  else{
+    res.json(null);
+  }
 };
 
-function getTable(tableObject, currentPage, fValArray, fTypeArray, fColumnArray, sortCol, orderCol, callback){
+
+////
+// Table Functions
+////
+
+function processTable(tableObject, currentPage, fValArray, fTypeArray, fColumnArray, sortCol, orderCol, callback){
 
   var nrOfRows = 70;//Temporary
 
   currentPage = parseFloat(currentPage, 10);
   var parsedObject = JSON.parse(tableObject);
-
+  if(Object.keys(parsedObject).length > 0)
+  {
   var headers = Object.keys(parsedObject[0]);
-  //console.log(headers);
 
   for (var outKey = (parsedObject.length - 1); outKey >= 0; outKey--){
     var outObject = parsedObject[outKey];
@@ -1241,7 +1440,6 @@ function getTable(tableObject, currentPage, fValArray, fTypeArray, fColumnArray,
     var filterRow = false;
 
     for(var innerKey in outObject){
-      //console.log(innerKey);
       for (var fCounter = 0; fCounter < fColumnArray.length; fCounter++) {
         if(innerKey === headers[fColumnArray[fCounter]]){
 
@@ -1364,24 +1562,34 @@ function getTable(tableObject, currentPage, fValArray, fTypeArray, fColumnArray,
   }
 
   var nrOfPages = Math.floor(parsedObject.length/nrOfRows);
-  console.log(nrOfPages);
 
   var newTableObject = [];
   if(parsedObject.length >= ((nrOfRows * currentPage) + nrOfRows)){
     for (var i = (nrOfRows * currentPage); i < ((nrOfRows * currentPage) + nrOfRows); i++) {
+      if(parsedObject[i].hasOwnProperty('player_id')){
+        delete parsedObject[i]['player_id'];
+      }else if(parsedObject[i].hasOwnProperty('previous_player_id')){
+        delete parsedObject[i]['previous_player_id'];
+      }
       newTableObject.push(parsedObject[i]);
     };
   }
   else{
     for (var i = (nrOfRows * currentPage); i < parsedObject.length; i++) {
+      if(parsedObject[i].hasOwnProperty('player_id')){
+        delete parsedObject[i]['player_id'];
+      }else if(parsedObject[i].hasOwnProperty('previous_player_id')){
+        delete parsedObject[i]['previous_player_id'];
+      }
       newTableObject.push(parsedObject[i]);
     };
   }
-
-  resultObject = {'tableData': newTableObject, 'tableNrOfPages': nrOfPages};
-
-  callback(JSON.stringify(resultObject));
-
+    var resultObject = {'tableData': newTableObject, 'tableNrOfPages': nrOfPages};
+    callback(JSON.stringify(resultObject));
+  }
+  else{
+    callback(null);
+  }
 };
 
 exports.updateTable = function(req, res){
@@ -1396,33 +1604,19 @@ exports.updateTable = function(req, res){
   var reqSortColumn = req.body.mySortColumn;
   var reqOrderColumn = req.body.myOrderColumn;
 
-  //console.log('reqSortColumn: ' + reqSortColumn);
-  //console.log('reqOrderColumn: ' + reqOrderColumn);
-
-  /*console.log('reqFilterValArray: ' + reqFilterValArray.length);
-  console.log('reqFilterTypeArray: ' + reqFilterTypeArray.length);
-  console.log('reqFilterColumnArray: ' + reqFilterColumnArray.length);
-  console.log('reqFilterValArray: ' + reqFilterValArray[0]);
-  console.log('reqFilterTypeArray: ' + reqFilterTypeArray[0]);
-  console.log('reqFilterColumnArray: ' + reqFilterColumnArray[0]);*/
-  
-
-  //console.log('reqCurrentPage: ' + reqCurrentPage);
-
   if(typeof req.session.currentKey !== 'undefined'){
     getJSON(req.session.currentKey, reqSelectedItem, function(resultData){
-      getTable(resultData, reqCurrentPage, reqFilterValArray, reqFilterTypeArray, 
-        reqFilterColumnArray, reqSortColumn, reqOrderColumn, function(resultTable){
-        res.json(resultTable);
-      });
+      if(resultData != null){
+        processTable(resultData, reqCurrentPage, reqFilterValArray, reqFilterTypeArray, 
+          reqFilterColumnArray, reqSortColumn, reqOrderColumn, function(resultTable){
+          res.json(resultTable);
+        });
+      }
     });
   }
   else{
-    res.json(JSON.stringify({}));
+    res.json(null);
   }
 };
 
-exports.notFound = function(req, res){
-	res.send('404');
-};
 

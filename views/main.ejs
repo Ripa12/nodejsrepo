@@ -4,9 +4,26 @@
     
 	<% include partials/head.ejs %>
 
+	<style>
+		.vertical-center {
+			text-align: center;
+		}
+
+		.backContainer{
+		
+			background: #ffffff url('../images/BackgroundBanners.png') no-repeat center center fixed;
+			-webkit-background-size: cover;
+			-moz-background-size: cover;
+			-o-background-size: cover;
+			background-size: cover;
+			
+		}
+	</style>
+
 </head>
-<body>
+<body style="padding-top: 70px;"  class="backContainer">
     
+    <div class="container float-top">
 	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 		
 		<div class="navbar-header navbar-brand">
@@ -14,33 +31,73 @@
 		</div>
 		
 		<ul class="nav navbar-nav">
-			<li class="active"><a href="Graph.html">Graphs</a></li>
+			<li><a href="Graph.html">Graphs</a></li>
 			<li><a href="Table.html">Tables</a></li>
+            <li><a href="Achievement.html">Achievements</a></li>
 		</ul>
 		
-		<div class="col-sm-3 col-md-3">
-			<h2 style="color : blue;"> 9zEUDsWNqr0jCQ0MbIad8QgWH0giPxF4 </h3>
-		</div>
+		<p class="navbar-text" style="color: white;">Current Key: <%= currentKey %> </p> 
+        <p class="navbar-text" style="color: white;">Player: <%= currentPlayer %></p> 
 
 		<div class="col-sm-3 col-md-3 pull-right">
-        <form class="navbar-form" role="search" action="/key" method="post">
+        <form class="navbar-form" id="myKey" role="search" action="/setKey" method="post">
 		<label for="usr">
-				<span style="color: white;">
-					<h4> Key:  </h4>
-				</span>
-			</label>
+			<span style="color: white;">
+				<h4> Key:  </h4>
+			</span>
+		</label>
         <div class="input-group">
-            <!--<form action="/add" method="post"> !-->
-			<input type="text" name="newItem" placeholder="Enter key">
+			<input type="text" name="newItem" id="keyTextField" placeholder="Enter key">
 			<input type="submit">
-		<!--</form>!-->
+			
         </div>
         </form>
         </div>
 		
 	</nav>
+	</div>
 
-	
+	<div class="container">
+		<div class="jumbotron vertical-center">
+			<h1>Main Page</h1> 
+			<div class="row">
+				9zEUDsWNqr0jCQ0MbIad8QgWH0giPxF4
+			</div>
+        </div>
+	</div>
+
     <% include partials/scripts.ejs %>
+
+    <script>
+    var form = $('#myKey');
+    form.submit(function (ev) {
+        ev.preventDefault();
+        
+        $.ajax({
+            type: form.attr('method'),
+            url: form.attr('action'),
+            data: {
+                myApiKey: $('#keyTextField').val()
+            },
+            success: function (data) {
+            	if(data != null){
+                    var parsedData = JSON.parse(data);
+                    if(parsedData["playerId"]){
+                        location.reload(true);
+                    }
+                    else{
+                    	location.reload(true);
+                		alert("Key does not exist!");
+                	}
+                }
+                else{
+                	location.reload(true);
+                	alert("Key does not exist!");
+                }
+            }
+        });
+    });
+    </script>
+
 </body>
 </html>
