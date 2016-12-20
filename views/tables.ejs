@@ -122,7 +122,7 @@
 			<div class="jumbotron">
 
                 <fieldset id="myFilterform">
-                    <div class="row">
+                    <div class="row" id="filterRowID">
                     <div class="col-xs-3">
                         <div class="form-group">
                             <label>Value</label>
@@ -242,32 +242,18 @@
         $("#keyTable").tablesorter();  
     });
 
+    function removeFilter(elem){
+        $(elem).parent().parent().remove();
+    }
        
-        $("#add").click(function() {
-            var intId = $("#myFilterform div").length + 1;
-            var filterRowWrapper = $("<div class=\"row filterRow\" id=\"field" + intId + "\"/>");
-            var fValue = $("<div class=\"col-xs-3\"><div class=\"form-group\"><label>Value</label> <input type=\"text\" class=\"form-control filterFieldClass\" id=\"filterFieldID" + intId + "\"/></div></div>");
-            
-            var fType = $("<div class=\"col-xs-2\"><div class=\"form-group\"><label>Type</label><select class=\"selectpicker form-control filterTypeClass\" id=\"filterTypeID" + intId + "\"> <option value=\"0\">></option><option value=\"1\"><</option><option value=\"4\">>=</option><option value=\"5\"><=</option><option value=\"2\">equal</option><option value=\"3\">like</option></select></div></div>");
+    $("#add").click(function() {
+        var clonedFilterGroup = $('#filterRowID').clone();
+        clonedFilterGroup.removeAttr("id");
+        clonedFilterGroup.addClass("filterRowClass");
+        clonedFilterGroup.append("<div class=\"col-xs-1\"><label>Remove</label><input type=\"button\" class=\"remove btn btn-primary btn-md\" value=\"-\"onclick=\"removeFilter(this)\" /></div>");
 
-            var fColumn = $("<div class=\"col-xs-3\"><div class=\"form-group\"><label>Column</label><select class=\"selectpicker form-control filterColumnClass\" id=\"filterColumnID" + intId + "\"></select></div></div>");
-
-            $("#filterColumnID > option").each(function() {
-               
-                fColumn.find("select.selectpicker").append("<option>" + this.text
-                        + "</option>");
-            });
-
-            var removeButton = $("<div class=\"col-xs-1\"><label>Remove</label><input type=\"button\" class=\"remove btn btn-primary btn-md\" value=\"-\" /></div>");
-            removeButton.click(function() {
-                $(this).parent().remove();
-            });
-            filterRowWrapper.append(fValue);
-            filterRowWrapper.append(fType);
-            filterRowWrapper.append(fColumn);
-            filterRowWrapper.append(removeButton);
-            $("#myFilterform").append(filterRowWrapper);
-        });
+        $("#myFilterform").append(clonedFilterGroup);
+    });
 
 
   	$('#filterBtn').on('click', function (ev) {
@@ -587,7 +573,7 @@
         $("#currentPageFieldID").val("0");
 
         $('#add').prop("disabled",true);
-        $('.filterRow').remove();
+        $('.filterRowClass').remove();
     });
 
     var refreshBtn = $('#refreshBtn');

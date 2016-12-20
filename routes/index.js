@@ -187,7 +187,6 @@ exports.setKey = function(req, res){
   if(typeof reqApiKey !== 'undefined'){
     req.session.currentKey = reqApiKey;
 
-    console.log(req.session.currentKey);
     
     getJSON(req.session.currentKey, '1', function(playerData){
       if(playerData != null){
@@ -197,9 +196,7 @@ exports.setKey = function(req, res){
             req.session.currentPlayer = "Nameless";
           }
           req.session.currentPlayerID = JSON.parse(playerData)["playerId"];
-
-          console.log("player: " + req.session.currentPlayer);
-          console.log("playerId: " + req.session.currentPlayerID);
+          
         }
       }
       else{
@@ -256,10 +253,10 @@ function processAchievementData(achievementData, towerBuildsData, playerID, call
   var parsedAchievementData = JSON.parse(achievementData);
   var parsedTowerBuildsData = JSON.parse(towerBuildsData);
 
-  var resultObject = {'Claims': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'claim_count'}, 
-    'ClaimedTowers': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'tower_count'}, 
-    'GeldCollected': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'geld_collected'}, 
-    'Bonus': {'Player': [], 'Value': [-1, -1, -1, 1, -1], 'Target': 'geld_bonus'}};
+  var resultObject = {'Claims': {'Player': [], 'Value': [-1, -1, -1, -1, -1], 'Target': 'claim_count'}, 
+    'ClaimedTowers': {'Player': [], 'Value': [-1, -1, -1, -1, -1], 'Target': 'tower_count'}, 
+    'GeldCollected': {'Player': [], 'Value': [-1, -1, -1, -1, -1], 'Target': 'geld_collected'}, 
+    'Bonus': {'Player': [], 'Value': [-1, -1, -1, -1, -1], 'Target': 'geld_bonus'}};
 
 
 
@@ -303,7 +300,7 @@ function processAchievementData(achievementData, towerBuildsData, playerID, call
     }
   }
 
-  resultObject['BuiltTowers'] = {'Player': [], 'Value': [-1, -1, -1, 1], 'Target': 'count'};
+  resultObject['BuiltTowers'] = {'Player': [], 'Value': [-1, -1, -1, -1, -1], 'Target': 'count'};
 
   for(var outerKey in parsedTowerBuildsData){
     var outerObj = parsedTowerBuildsData[outerKey];
@@ -439,7 +436,7 @@ function processTowerMapByRegion(geoData, objectData, sortOn, region, top3, play
 
   for (var outerKey = 0; (outerKey < parsedObject.length) && (innerKey < parsedGeoObject.length); outerKey++) {
     var outerObj = parsedObject[outerKey];
-    var innerObj = parsedGeoObject[innerKey]; // Remember to check if not empty first!!!
+    var innerObj = parsedGeoObject[innerKey]; // Empty ?
 
     while(innerObj['tower_id'] !== outerObj['tower_id']){
       innerKey += 1;
@@ -454,7 +451,6 @@ function processTowerMapByRegion(geoData, objectData, sortOn, region, top3, play
     }
     tempResultObject[innerObj[region]]['Gold'][3] += floatVal;
     tempResultObject[innerObj[region]]['Gold'][4] += 1;
-    //if((innerObj['player_id'] === playerID) || (playerID === '-1')){
 
       if(floatVal > tempResultObject[innerObj[region]]['Gold'][2]){
 
@@ -470,7 +466,7 @@ function processTowerMapByRegion(geoData, objectData, sortOn, region, top3, play
   var tempGeoObjIndex = 0;
   var towerName = '';
 
-  // Remember to check if 3 elemets exist
+  // 3 elemets exist ?
   if(top3 === false){
     resultObject['Region'] = [];
     for(var outerRegionKey in tempResultObject){
@@ -842,11 +838,11 @@ function processGraphPerDayInMonth(resultObject, parsedStatData, graphParams, ca
     var currentIndex = ((graphParams['selectRange'] > 0) ? outerObj[graphParams['targetKey']] : graphParams['playerName']);
 
     if(!statObject.hasOwnProperty(currentIndex)){
-      statObject[currentIndex] = [{'/01': [0, 0], '/02': [0, 0], '/03': [0, 0], '/04': [0, 0], '/05': [0, 0], '/06': [0, 0], 
-                    '/07': [0, 0], '/08': [0, 0], '/09': [0, 0], '/10': [0, 0], '/11': [0, 0], 
-                    '/12': [0, 0], '/13': [0, 0], '/14': [0, 0], '/15': [0, 0], '/16': [0, 0], '/17': [0, 0], '/18': [0, 0], 
-                      '/19': [0, 0], '/20': [0, 0], '/21': [0, 0], '/22': [0, 0], '/23': [0, 0], '/24': [0, 0], 
-                      '/25': [0, 0], '/26': [0, 0], '/27': [0, 0], '/28': [0, 0], '/29': [0, 0], '/30': [0, 0], '/31': [0, 0]}, 0, ''];
+      statObject[currentIndex] = [{'1': [0, 0], '2': [0, 0], '3': [0, 0], '4': [0, 0], '5': [0, 0], '6': [0, 0], 
+                    '7': [0, 0], '8': [0, 0], '9': [0, 0], '10': [0, 0], '11': [0, 0], 
+                    '12': [0, 0], '13': [0, 0], '14': [0, 0], '15': [0, 0], '16': [0, 0], '17': [0, 0], '18': [0, 0], 
+                      '19': [0, 0], '20': [0, 0], '21': [0, 0], '22': [0, 0], '23': [0, 0], '24': [0, 0], 
+                      '25': [0, 0], '26': [0, 0], '27': [0, 0], '28': [0, 0], '29': [0, 0], '30': [0, 0], '31': [0, 0]}, 0, new Date("1970")];
       statObject[currentIndex][1] = sortIndex;
       sortIndex++;
       sortable.push([currentIndex, 0]);
@@ -854,21 +850,25 @@ function processGraphPerDayInMonth(resultObject, parsedStatData, graphParams, ca
     }
       var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
       var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
-      var claimedDay = outerObj[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');
+      var claimedDay = new Date(outerObj[graphParams['timeKey']]);
     
       if(claimedDay < firstNewMoonDay){
         outerObjKey += 1;
       }
       else if((claimedDay >= firstNewMoonDay) && 
         (claimedDay <= lastNewMoonDay)){
+          
           if(graphParams['incValueKey'].length > 0){
-            statObject[currentIndex][0][claimedDay.substring(7, 10)][1] += parseFloat(outerObj[graphParams['incValueKey']]);
+            statObject[currentIndex][0][String(claimedDay.getDate())][1] += parseFloat(outerObj[graphParams['incValueKey']]);
           }
           else{
-            statObject[currentIndex][0][claimedDay.substring(7, 10)][1] += 1;
+            statObject[currentIndex][0][String(claimedDay.getDate())][1] += 1;
           }
-          if(statObject[currentIndex][2] != claimedDay){
-            statObject[currentIndex][0][claimedDay.substring(7, 10)][0] += 1;
+          
+          if((statObject[currentIndex][2].getDate() != claimedDay.getDate()) ||
+            (statObject[currentIndex][2].getMonth() != claimedDay.getMonth()) ||
+              (statObject[currentIndex][2].getFullYear() != claimedDay.getFullYear())){
+            statObject[currentIndex][0][String(claimedDay.getDate())][0] += 1;
             statObject[currentIndex][2] = claimedDay; 
           }
           sortable[statObject[currentIndex][1]][1] += 1;
@@ -898,11 +898,12 @@ function processGraphPerDayInMonth(resultObject, parsedStatData, graphParams, ca
   else{
     graphParams['selectRange'] = sortable.length;
   }
-
+  
   for (var m = 0; m < graphParams['selectRange']; m++) {
     var arr1 = [];
     var statKey = sortable[m][0];
     for(var j in statObject[statKey][0]){
+      
       if(statObject[statKey][0][j][0] != 0){
         statObject[statKey][0][j][1] = (statObject[statKey][0][j][1] / statObject[statKey][0][j][0]);
         arr1.push(statObject[statKey][0][j][1]);
@@ -944,8 +945,8 @@ function processGraphPerNewMoon(resultObject, parsedStatData, graphParams, callb
 
     var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
     var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
-    var claimedDay = outerObj[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');
-      
+    var claimedDay = new Date(outerObj[graphParams['timeKey']]);
+     
       if(claimedDay < firstNewMoonDay){
         outerObjKey += 1;
       }
@@ -962,8 +963,8 @@ function processGraphPerNewMoon(resultObject, parsedStatData, graphParams, callb
       }  
       else{
         
-        var d1 = new Date(lastNewMoonDay);
-        var d2 = new Date(firstNewMoonDay);
+        var d1 = (lastNewMoonDay);
+        var d2 = (firstNewMoonDay);
         
         var daySpan = (graphParams['average'] === true ? (Math.abs(d1-d2) / 86400000) : 1);
 
@@ -1007,7 +1008,9 @@ function processGraphPerNewMoon(resultObject, parsedStatData, graphParams, callb
   }
   
   for (var i = 0; i < (resultObject['timeAxle'].length - 1); i++) {
-    resultObject['timeAxle'][i] = resultObject['timeAxle'][i].substring(2, 10) + '-' + resultObject['timeAxle'][i + 1].substring(2, 10);
+    resultObject['timeAxle'][i] = resultObject['timeAxle'][i].getFullYear() + "/" + (resultObject['timeAxle'][i].getMonth() + 1) + "/" +
+    resultObject['timeAxle'][i].getDate() + '-' + resultObject['timeAxle'][i + 1].getFullYear() + "/" + (resultObject['timeAxle'][i + 1].getMonth() + 1) + 
+    "/" + resultObject['timeAxle'][i + 1].getDate();
   };
   resultObject['timeAxle'].pop();
  
@@ -1025,33 +1028,33 @@ function processGraphAvgPerHour(resultObject, parsedStatData, graphParams, callb
   weekDay[5] = 'Saturday';
   weekDay[6] = 'Sunday';
 
-  var hours = {'T00': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]},
-  'T01': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T02': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T03': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T04': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T05': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T06': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T07': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T08': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T09': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T10': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T11': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T12': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T13': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T14': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T15': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T16': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T17': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T18': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T19': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T20': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T21': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T22': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
-  'T23': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}};
+  var hours = {'0': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]},
+  '1': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '2': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '3': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '4': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '5': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '6': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '7': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '8': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '9': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '10': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '11': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '12': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '13': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '14': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '15': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '16': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '17': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '18': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '19': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '20': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '21': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '22': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}, 
+  '23': {'Monday': [0, 0], 'Tuesday': [0, 0], 'Wednesday': [0, 0], 'Thursday': [0, 0], 'Friday': [0, 0], 'Saturday': [0, 0], 'Sunday': [0, 0]}};
   
 
-  var prevDay = '';
+  var prevDay = new Date("1970");
   var prevHour = '';
   var timeCounter = 0;
   var outerObjKey = 0;
@@ -1062,8 +1065,8 @@ function processGraphAvgPerHour(resultObject, parsedStatData, graphParams, callb
 
       var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
       var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
-      var claimedDay = outClaimsObject[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');
-      var claimedHour = outClaimsObject[graphParams['timeKey']].substring(10, 13);
+      var claimedDay = new Date(outClaimsObject[graphParams['timeKey']]);
+      var claimedHour = String(claimedDay.getHours());
 
       if(claimedDay < firstNewMoonDay){
         outerObjKey += 1;
@@ -1071,14 +1074,14 @@ function processGraphAvgPerHour(resultObject, parsedStatData, graphParams, callb
       else if((claimedDay >= firstNewMoonDay) && 
         (claimedDay <= lastNewMoonDay)){
           if(graphParams['incValueKey'].length > 0){
-             hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][1] += parseFloat(outClaimsObject[graphParams['incValueKey']]);      
+             hours[claimedHour][weekDay[claimedDay.getDay()]][1] += parseFloat(outClaimsObject[graphParams['incValueKey']]);      
           }
           else{
-            hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][1] += 1;
+            hours[claimedHour][weekDay[claimedDay.getDay()]][1] += 1;
           }
 
-          if((prevDay != claimedDay) || (prevHour != claimedHour)) {
-            hours[claimedHour][weekDay[new Date(claimedDay).getDay()]][0] += 1;
+          if(((prevDay.getFullYear() != claimedDay.getFullYear()) && (prevDay.getMonth() != claimedDay.getMonth()) && (prevDay.getDate() != claimedDay.getDate())) || (prevHour != claimedHour)) {
+            hours[claimedHour][weekDay[claimedDay.getDay()]][0] += 1;
             prevDay = claimedDay; 
             prevHour = claimedHour;
           }
@@ -1096,12 +1099,13 @@ function processGraphAvgPerHour(resultObject, parsedStatData, graphParams, callb
     var jCounter = 0;
     for(var j in iObj){
       var jObj = iObj[j];
+
       hours[i][j][1] = (hours[i][j][1] / ((hours[i][j][0] > 0) ? hours[i][j][0] : 1 ));
 
       resultObject['valueAxle'][jCounter][1].push(hours[i][j][1]);
       jCounter++;
     }
-    resultObject['timeAxle'].push(i.substring(1, 3));
+    resultObject['timeAxle'].push(i);
   }
   
   callback(resultObject);
@@ -1120,18 +1124,20 @@ function processGraphTopDate(resultObject, parsedStatData, graphParams, callback
   while((resultObject['timeAxle'].length > (timeCounter + 1)) && (outerObjKey < parsedStatData.length)){
     var outClaimsObject = parsedStatData[outerObjKey];
 
-    var selectedObject = outClaimsObject[graphParams['timeKey']];
+    var selectedObject = '';
+    var tempSelectedDate = new Date(outClaimsObject[graphParams['timeKey']]);
     switch(graphParams['groupBy']){
       case GroupByValue.Overall :
       break;
       case GroupByValue.ByDate :
-        selectedObject = selectedObject.substring(0, 10).replace(/\-/g, '/');
+        selectedObject = tempSelectedDate.getFullYear() + "/" + (tempSelectedDate.getMonth() + 1) +
+        "/" + tempSelectedDate.getDate();
       break;
       case GroupByValue.ByMonth :
-        selectedObject = selectedObject.substring(0, 7).replace(/\-/g, '/');
+        selectedObject = (tempSelectedDate.getMonth() + 1);
       break;
       case GroupByValue.ByHour :
-        selectedObject = selectedObject.substring(10, 13);
+        selectedObject = tempSelectedDate.getHours();
       break;
     }
 
@@ -1144,7 +1150,7 @@ function processGraphTopDate(resultObject, parsedStatData, graphParams, callback
 
       var firstNewMoonDay = resultObject['timeAxle'][timeCounter];
       var lastNewMoonDay = resultObject['timeAxle'][timeCounter + 1];
-      var claimedDay = outClaimsObject[graphParams['timeKey']].substring(0, 10).replace(/\-/g, '/');  
+      var claimedDay = new Date(outClaimsObject[graphParams['timeKey']]);
 
       if(claimedDay < firstNewMoonDay){
         outerObjKey += 1;
@@ -1280,8 +1286,8 @@ function processGraph(graphParams, resultObject, filteredData, callback){
 }
 
 exports.updateGraph = function(req, res){
-  var fromDate = req.body.myFromDate;
-  var toDate = req.body.myToDate;
+  var fromDate = new Date(req.body.myFromDate);
+  var toDate = new Date(req.body.myToDate);
   var presetSelector = req.body.myPresetSelector;
   var timeframeSelector = req.body.myTimeframeSelector;
   var groupBy = req.body.myGroupByRadio;
@@ -1289,7 +1295,6 @@ exports.updateGraph = function(req, res){
   
   if(typeof req.session.currentKey !== 'undefined'){
   
-  console.log(req.session.currentKey);
 
   var reqSelectedItem = '0';
     switch(presetSelector){
@@ -1321,12 +1326,13 @@ exports.updateGraph = function(req, res){
       var resultObject = {valueAxle: [], timeAxle: []};
       for (var outKey in parsedNewMoon) {
         var outObject = parsedNewMoon[outKey];
-        var currDate = outObject['iso8601'].substring(0, 10).replace(/\-/g, '/');
+        var currDate = new Date(outObject['iso8601']);
         if ((currDate >= fromDate) && (currDate <= toDate)) {
           resultObject['timeAxle'].push(currDate);
         }
       } 
-      var currentDate = new Date().toJSON().slice(0,10).replace(/\-/g, '/');
+      var currentDate = new Date(new Date().toJSON().slice(0,10).replace(/\-/g, '/'));
+
       if ((currentDate >= fromDate) && (currentDate <= toDate)) {
           resultObject['timeAxle'].push(currentDate);
       }
@@ -1433,16 +1439,22 @@ function processTable(tableObject, currentPage, fValArray, fTypeArray, fColumnAr
   if(Object.keys(parsedObject).length > 0)
   {
   var headers = Object.keys(parsedObject[0]);
+  for (var i = (headers.length - 1); i >= 0; i--) {
+    if(headers[i] == 'player_id'){
+      headers.splice(i,1);
+    }else if(headers[i] == 'previous_player_id'){
+      headers.splice(i,1);
+    }
+  };
 
   for (var outKey = (parsedObject.length - 1); outKey >= 0; outKey--){
     var outObject = parsedObject[outKey];
-
     var filterRow = false;
 
     for(var innerKey in outObject){
       for (var fCounter = 0; fCounter < fColumnArray.length; fCounter++) {
         if(innerKey === headers[fColumnArray[fCounter]]){
-
+        if(outObject[innerKey] !== null && outObject[innerKey] !== "undefined"){
           if((/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/.test(outObject[innerKey])) && 
             (/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/.test(fValArray[fCounter]))){
             switch(fTypeArray[fCounter]){
@@ -1526,6 +1538,10 @@ function processTable(tableObject, currentPage, fValArray, fTypeArray, fColumnAr
               }
             }
           }
+        }
+        else{
+          filterRow = true;
+        }
         }
       }
     }
